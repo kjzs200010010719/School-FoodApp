@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/models/food_item.dart';
+import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
+import 'package:my_app/widgets/food_card.dart';
 
-//HomeScreen是有狀態元件（StatefulWidget），因為底部導覽列需要追蹤目前選取的index。
-//HomeScreen的createState() 回傳對應的State物件_HomeScreenState。
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -10,51 +12,11 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-//State類別。_currentIndex紀錄底部導覽列目前選到第幾個項目
-//，預設為0（首頁）。底線前綴_代表私有變數。
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  //定義「今日推薦」的資料列表，每筆資料是一個Map，key為String，value可以是任何型別（dynamic）。
-  //final表示這個列表本身的參考不可改變。
-  final List<Map<String, dynamic>> recommendedFoods = [
-    {
-      'name': '舒肥雞胸餐盒',
-      'store': '健康餐盒店',
-      'price': 120,
-      'tag': '高蛋白',
-      'reason': '符合你的高蛋白需求',
-      'icon': Icons.lunch_dining,
-    },
-    {
-      'name': '番茄義大利麵',
-      'store': '義式小館',
-      'price': 150,
-      'tag': '熱門',
-      'reason': '符合你的預算範圍',
-      'icon': Icons.restaurant,
-    },
-  ];
-
-  //定義「即期優惠」
-  final List<Map<String, dynamic>> expiringFoods = [
-    {
-      'name': '鮪魚三明治',
-      'store': '晨光早餐店',
-      'price': 45,
-      'discount': '7折',
-      'timeLeft': '剩 2 小時',
-      'icon': Icons.breakfast_dining,
-    },
-    {
-      'name': '水果優格杯',
-      'store': '輕食專賣店',
-      'price': 60,
-      'discount': '8折',
-      'timeLeft': '剩 3 小時',
-      'icon': Icons.icecream,
-    },
-  ];
+  final List<FoodItem> recommendedFoods = MockFoodRepository.recommendedPreview;
+  final List<FoodItem> expiringFoods = MockFoodRepository.expiringFoods;
 
   Future<void> _goToRecommendation() async {
     await Navigator.push(
@@ -69,8 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  //底部導覽列被點擊時呼叫。
-  //setState()通知Flutter狀態改變、需要重新渲染，內部將_currentIndex更新為被點擊的項目編號。
+  void _goToFoodDetail(FoodItem food) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
+    );
+  }
+
   void _onNavTap(int index) async {
     if (index == 0) {
       setState(() {
@@ -102,8 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  //顯示一個底部提示條（Snackbar），
-  //內容為目前點擊的頁籤名稱，持續1秒後自動消失。${}是Dart的字串插值語法。
   String _navTitle(int index) {
     switch (index) {
       case 0:
@@ -121,13 +86,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  //回傳Scaffold，這是Flutter頁面的基本骨架，
-  //提供body、bottomNavigationBar等插槽。背景設為淡綠灰色。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
-      //讓內容自動避開螢幕的瀏海、狀態列、Home指示條等系統UI區域。
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -142,11 +104,20 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 24),
               _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
               const SizedBox(height: 12),
-              ...recommendedFoods.map((food) => _buildRecommendCard(food)),
+              ...recommendedFoods.map(
+                (food) =>
+                    FoodCard(food: food, onTap: () => _goToFoodDetail(food)),
+              ),
               const SizedBox(height: 24),
               _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
               const SizedBox(height: 12),
-              ...expiringFoods.map((food) => _buildExpiringCard(food)),
+              ...expiringFoods.map(
+                (food) => FoodCard(
+                  food: food,
+                  variant: FoodCardVariant.expiring,
+                  onTap: () => _goToFoodDetail(food),
+                ),
+              ),
               const SizedBox(height: 24),
               _buildDecisionCard(),
             ],
@@ -234,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -293,10 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    _goToRecommendation();
-                    debugPrint('有點到查看推薦');
-                  },
+                  onPressed: _goToRecommendation,
                   icon: const Icon(Icons.recommend),
                   label: const Text('查看推薦'),
                   style: ElevatedButton.styleFrom(
@@ -355,159 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        TextButton(
-          onPressed: () {
-            _goToRecommendation();
-          },
-          child: const Text('更多'),
-        ),
+        TextButton(onPressed: _goToRecommendation, child: const Text('更多')),
       ],
-    );
-  }
-
-  Widget _buildRecommendCard(Map<String, dynamic> food) {
-    return GestureDetector(
-      onTap: () {
-        _goToRecommendation();
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF5E8),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(
-                food['icon'],
-                size: 34,
-                color: const Color(0xFF4E8D57),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    food['name'],
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E3A2F),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    food['store'],
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildTag(food['tag']),
-                      _buildTag('NT\$ ${food['price']}'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    food['reason'],
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF4E8D57),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.favorite_border_rounded,
-                color: Colors.redAccent,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpiringCard(Map<String, dynamic> food) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF2),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFFE3A3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF1CC),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(food['icon'], size: 34, color: const Color(0xFFD68A00)),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  food['name'],
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E3A2F),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  food['store'],
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _buildWarningTag(food['discount']),
-                    _buildWarningTag(food['timeLeft']),
-                    _buildWarningTag('NT\$ ${food['price']}'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.bookmark_border_rounded),
-          ),
-        ],
-      ),
     );
   }
 
@@ -558,42 +375,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTag(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF5E8),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          color: Color(0xFF4E8D57),
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWarningTag(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1CC),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          color: Color(0xFFD68A00),
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
