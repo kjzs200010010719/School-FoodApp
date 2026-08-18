@@ -3,6 +3,7 @@ import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
+import 'package:my_app/screens/search_screen.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
+    );
+  }
+
+  void _goToSearch({String initialQuery = ''}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchScreen(initialQuery: initialQuery),
+      ),
     );
   }
 
@@ -199,32 +209,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      elevation: 0,
+      child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: '搜尋你想吃的餐點、店家...',
-          prefixIcon: const Icon(Icons.search_rounded),
-          suffixIcon: IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.tune_rounded),
-          ),
-          border: OutlineInputBorder(
+        onTap: _goToSearch,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          filled: true,
-          fillColor: Colors.white,
+          child: Row(
+            children: [
+              const Icon(Icons.search_rounded, color: Colors.black54),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  '搜尋你想吃的餐點、店家...',
+                  style: TextStyle(fontSize: 16, color: Colors.black45),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                tooltip: '篩選',
+                onPressed: _goToSearch,
+                icon: const Icon(Icons.tune_rounded),
+              ),
+            ],
+          ),
         ),
       ),
     );

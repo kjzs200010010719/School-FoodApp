@@ -22,4 +22,16 @@ void main() {
     expect(find.text('餐點詳情'), findsOneWidget);
     expect(find.text('推薦原因'), findsOneWidget);
   });
+
+  testWidgets('opens search screen from home search field', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('搜尋你想吃的餐點、店家...'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('搜尋餐點'), findsOneWidget);
+    expect(find.text('餐點、店家、食材或標籤'), findsOneWidget);
+  });
 }
