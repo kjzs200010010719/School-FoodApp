@@ -34,4 +34,16 @@ void main() {
     expect(find.text('搜尋餐點'), findsOneWidget);
     expect(find.text('餐點、店家、食材或標籤'), findsOneWidget);
   });
+
+  testWidgets('opens wheel screen from home quick action', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('轉盤決定'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('食物轉盤'), findsOneWidget);
+    expect(find.text('轉盤條件'), findsOneWidget);
+  });
 }

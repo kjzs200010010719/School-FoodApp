@@ -4,6 +4,7 @@ import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
 import 'package:my_app/screens/search_screen.dart';
+import 'package:my_app/screens/wheel_screen.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,6 +49,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _goToWheel() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const WheelScreen()),
+    );
+
+    if (mounted) {
+      setState(() {
+        _currentIndex = 0;
+      });
+    }
+  }
+
   void _onNavTap(int index) async {
     if (index == 0) {
       setState(() {
@@ -68,6 +82,15 @@ class _HomeScreenState extends State<HomeScreen> {
           _currentIndex = 0;
         });
       }
+      return;
+    }
+
+    if (index == 2) {
+      setState(() {
+        _currentIndex = 2;
+      });
+
+      await _goToWheel();
       return;
     }
 
@@ -302,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: _goToWheel,
                   icon: const Icon(Icons.casino_rounded),
                   label: const Text('轉盤決定'),
                   style: OutlinedButton.styleFrom(
@@ -382,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: _goToWheel,
               icon: const Icon(Icons.casino_rounded),
               label: const Text('開始轉盤'),
               style: ElevatedButton.styleFrom(
