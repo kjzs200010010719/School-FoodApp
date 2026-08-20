@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/main.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/services/user_profile_service.dart';
 
 void main() {
   setUp(() {
     UserActivityService.instance.clearForTesting();
+    UserProfileService.instance.clearForTesting();
   });
 
   testWidgets('renders home screen content', (WidgetTester tester) async {
@@ -19,6 +21,7 @@ void main() {
   testWidgets('opens food detail from home recommendation card', (
     WidgetTester tester,
   ) async {
+    UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.text('舒肥雞胸餐盒'));
@@ -31,6 +34,7 @@ void main() {
   testWidgets('opens search screen from home search field', (
     WidgetTester tester,
   ) async {
+    UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.text('搜尋你想吃的餐點、店家...'));
@@ -43,6 +47,7 @@ void main() {
   testWidgets('opens wheel screen from home quick action', (
     WidgetTester tester,
   ) async {
+    UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.text('轉盤決定'));
@@ -55,6 +60,7 @@ void main() {
   testWidgets('opens collection screen from bottom navigation', (
     WidgetTester tester,
   ) async {
+    UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.text('收藏').last);
@@ -62,5 +68,35 @@ void main() {
 
     expect(find.text('收藏與紀錄'), findsOneWidget);
     expect(find.text('尚未收藏餐點'), findsOneWidget);
+  });
+
+  testWidgets('redirects to login before opening protected features', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('查看推薦'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('登入'), findsOneWidget);
+    expect(find.text('測試登入'), findsOneWidget);
+  });
+
+  testWidgets('opens profile screen and logs in with demo account', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('登入'), findsOneWidget);
+    expect(find.text('測試登入'), findsOneWidget);
+
+    await tester.tap(find.text('測試登入'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('測試使用者'), findsOneWidget);
+    expect(find.text('飲食偏好'), findsOneWidget);
   });
 }

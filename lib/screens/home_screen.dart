@@ -3,10 +3,12 @@ import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/collection_screen.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
+import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
 import 'package:my_app/screens/search_screen.dart';
 import 'package:my_app/screens/wheel_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/services/user_profile_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final UserActivityService _activityService = UserActivityService.instance;
+  final UserProfileService _profileService = UserProfileService.instance;
   int _currentIndex = 0;
 
   final List<FoodItem> recommendedFoods = MockFoodRepository.recommendedPreview;
@@ -27,15 +30,24 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _activityService.addListener(_refresh);
+    _profileService.addListener(_refresh);
   }
 
   @override
   void dispose() {
     _activityService.removeListener(_refresh);
+    _profileService.removeListener(_refresh);
     super.dispose();
   }
 
   Future<void> _goToRecommendation() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const RecommendationScreen()),
@@ -48,14 +60,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _goToFoodDetail(FoodItem food) {
+  Future<void> _goToFoodDetail(FoodItem food) async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
     );
   }
 
-  void _goToSearch({String initialQuery = ''}) {
+  Future<void> _goToSearch({String initialQuery = ''}) async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -65,6 +91,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _goToWheel() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const WheelScreen()),
@@ -78,6 +111,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _goToCollection({int initialTabIndex = 0}) async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -91,6 +131,28 @@ class _HomeScreenState extends State<HomeScreen> {
         _currentIndex = 0;
       });
     }
+  }
+
+  Future<void> _goToProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    );
+
+    if (mounted) {
+      setState(() {
+        _currentIndex = 0;
+      });
+    }
+  }
+
+  Future<bool> _ensureLoggedIn() async {
+    if (_profileService.isLoggedIn) {
+      return true;
+    }
+
+    await _goToProfile();
+    return false;
   }
 
   void _onNavTap(int index) async {
@@ -131,6 +193,15 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       await _goToCollection();
+      return;
+    }
+
+    if (index == 4) {
+      setState(() {
+        _currentIndex = 4;
+      });
+
+      await _goToProfile();
       return;
     }
 
@@ -182,8 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   food: food,
                   isFavorite: _activityService.isFavorite(food.id),
                   onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () =>
-                      _activityService.toggleFavorite(food),
+                  onFavoritePressed: () => _toggleFavorite(food),
                 ),
               ),
               const SizedBox(height: 24),
@@ -195,8 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   variant: FoodCardVariant.expiring,
                   isFavorite: _activityService.isFavorite(food.id),
                   onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () =>
-                      _activityService.toggleFavorite(food),
+                  onFavoritePressed: () => _toggleFavorite(food),
                 ),
               ),
               const SizedBox(height: 24),
@@ -469,6 +538,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggleFavorite(FoodItem food) async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+
+    _activityService.toggleFavorite(food);
   }
 
   void _refresh() {
