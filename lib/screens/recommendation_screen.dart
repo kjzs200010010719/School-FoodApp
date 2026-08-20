@@ -4,6 +4,7 @@ import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/recommendation_service.dart';
+import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class RecommendationScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class RecommendationScreen extends StatefulWidget {
 class _RecommendationScreenState extends State<RecommendationScreen> {
   final RecommendationService _recommendationService =
       const RecommendationService();
+  final UserActivityService _activityService = UserActivityService.instance;
   final UserPreference _preference = UserPreference.defaultPreference;
   late List<FoodItem> recommendedFoods;
 
@@ -26,6 +28,13 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
       foods: MockFoodRepository.allFoods,
       preference: _preference,
     );
+    _activityService.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    _activityService.removeListener(_refresh);
+    super.dispose();
   }
 
   @override
@@ -57,8 +66,10 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                 return FoodCard(
                   food: food,
                   showDistance: true,
+                  isFavorite: _activityService.isFavorite(food.id),
                   onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () => _toggleFavorite(index),
+                  onFavoritePressed: () =>
+                      _activityService.toggleFavorite(food),
                 );
               },
             ),
@@ -121,10 +132,9 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
     );
   }
 
-  void _toggleFavorite(int index) {
-    setState(() {
-      final food = recommendedFoods[index];
-      recommendedFoods[index] = food.copyWith(isFavorite: !food.isFavorite);
-    });
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

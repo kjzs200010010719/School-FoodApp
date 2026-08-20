@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/main.dart';
+import 'package:my_app/services/user_activity_service.dart';
 
 void main() {
+  setUp(() {
+    UserActivityService.instance.clearForTesting();
+  });
+
   testWidgets('renders home screen content', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
@@ -45,5 +50,17 @@ void main() {
 
     expect(find.text('食物轉盤'), findsOneWidget);
     expect(find.text('轉盤條件'), findsOneWidget);
+  });
+
+  testWidgets('opens collection screen from bottom navigation', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('收藏').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('收藏與紀錄'), findsOneWidget);
+    expect(find.text('尚未收藏餐點'), findsOneWidget);
   });
 }

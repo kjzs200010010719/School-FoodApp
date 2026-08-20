@@ -12,6 +12,7 @@ class FoodCard extends StatelessWidget {
     this.onTap,
     this.onFavoritePressed,
     this.showDistance = false,
+    this.isFavorite,
   });
 
   final FoodItem food;
@@ -19,6 +20,7 @@ class FoodCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onFavoritePressed;
   final bool showDistance;
+  final bool? isFavorite;
 
   bool get _isExpiring => variant == FoodCardVariant.expiring;
 
@@ -128,19 +130,22 @@ class FoodCard extends StatelessWidget {
   }
 
   Widget _buildActionButton() {
+    final favorite = isFavorite ?? food.isFavorite;
+
     if (_isExpiring) {
       return IconButton(
         onPressed: onFavoritePressed,
-        icon: const Icon(Icons.bookmark_border_rounded),
+        icon: Icon(
+          favorite ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          color: favorite ? const Color(0xFFD68A00) : null,
+        ),
       );
     }
 
     return IconButton(
       onPressed: onFavoritePressed,
       icon: Icon(
-        food.isFavorite
-            ? Icons.favorite_rounded
-            : Icons.favorite_border_rounded,
+        favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         color: Colors.redAccent,
       ),
     );

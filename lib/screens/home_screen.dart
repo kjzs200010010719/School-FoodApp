@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
+import 'package:my_app/screens/collection_screen.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
 import 'package:my_app/screens/search_screen.dart';
 import 'package:my_app/screens/wheel_screen.dart';
+import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,10 +17,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final UserActivityService _activityService = UserActivityService.instance;
   int _currentIndex = 0;
 
   final List<FoodItem> recommendedFoods = MockFoodRepository.recommendedPreview;
   final List<FoodItem> expiringFoods = MockFoodRepository.expiringFoods;
+
+  @override
+  void initState() {
+    super.initState();
+    _activityService.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    _activityService.removeListener(_refresh);
+    super.dispose();
+  }
 
   Future<void> _goToRecommendation() async {
     await Navigator.push(
@@ -62,6 +77,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _goToCollection({int initialTabIndex = 0}) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CollectionScreen(initialTabIndex: initialTabIndex),
+      ),
+    );
+
+    if (mounted) {
+      setState(() {
+        _currentIndex = 0;
+      });
+    }
+  }
+
   void _onNavTap(int index) async {
     if (index == 0) {
       setState(() {
@@ -91,6 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       await _goToWheel();
+      return;
+    }
+
+    if (index == 3) {
+      setState(() {
+        _currentIndex = 3;
+      });
+
+      await _goToCollection();
       return;
     }
 
@@ -138,8 +178,13 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
               const SizedBox(height: 12),
               ...recommendedFoods.map(
-                (food) =>
-                    FoodCard(food: food, onTap: () => _goToFoodDetail(food)),
+                (food) => FoodCard(
+                  food: food,
+                  isFavorite: _activityService.isFavorite(food.id),
+                  onTap: () => _goToFoodDetail(food),
+                  onFavoritePressed: () =>
+                      _activityService.toggleFavorite(food),
+                ),
               ),
               const SizedBox(height: 24),
               _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
@@ -148,7 +193,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 (food) => FoodCard(
                   food: food,
                   variant: FoodCardVariant.expiring,
+                  isFavorite: _activityService.isFavorite(food.id),
                   onTap: () => _goToFoodDetail(food),
+                  onFavoritePressed: () =>
+                      _activityService.toggleFavorite(food),
                 ),
               ),
               const SizedBox(height: 24),
@@ -421,5 +469,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

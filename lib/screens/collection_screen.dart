@@ -1,0 +1,169 @@
+import 'package:flutter/material.dart';
+import 'package:my_app/models/food_item.dart';
+import 'package:my_app/screens/food_detail_screen.dart';
+import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/widgets/food_card.dart';
+
+class CollectionScreen extends StatefulWidget {
+  const CollectionScreen({super.key, this.initialTabIndex = 0});
+
+  final int initialTabIndex;
+
+  @override
+  State<CollectionScreen> createState() => _CollectionScreenState();
+}
+
+class _CollectionScreenState extends State<CollectionScreen>
+    with SingleTickerProviderStateMixin {
+  final UserActivityService _activityService = UserActivityService.instance;
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: 2,
+      initialIndex: widget.initialTabIndex,
+      vsync: this,
+    );
+    _activityService.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    _activityService.removeListener(_refresh);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F4),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F9F4),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          '收藏與紀錄',
+          style: TextStyle(
+            color: Color(0xFF2E3A2F),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF2E3A2F)),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF4E8D57),
+          unselectedLabelColor: Colors.black54,
+          indicatorColor: const Color(0xFF4E8D57),
+          tabs: const [
+            Tab(text: '收藏'),
+            Tab(text: '瀏覽紀錄'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildFoodList(
+            foods: _activityService.favorites,
+            emptyTitle: '尚未收藏餐點',
+            emptyMessage: '在餐點詳情頁按下收藏，之後就能在這裡快速找到。',
+            removable: true,
+          ),
+          _buildFoodList(
+            foods: _activityService.history,
+            emptyTitle: '尚無瀏覽紀錄',
+            emptyMessage: '點進餐點詳情後，系統會自動留下最近看過的餐點。',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoodList({
+    required List<FoodItem> foods,
+    required String emptyTitle,
+    required String emptyMessage,
+    bool removable = false,
+  }) {
+    if (foods.isEmpty) {
+      return _buildEmptyState(emptyTitle, emptyMessage);
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: foods.length,
+      itemBuilder: (context, index) {
+        final food = foods[index];
+        return FoodCard(
+          food: food,
+          showDistance: true,
+          isFavorite: _activityService.isFavorite(food.id),
+          variant: food.isExpiringSoon
+              ? FoodCardVariant.expiring
+              : FoodCardVariant.recommendation,
+          onTap: () => _goToFoodDetail(food),
+          onFavoritePressed: removable
+              ? () => _activityService.toggleFavorite(food)
+              : null,
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(String title, String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                color: Color(0xFFEAF5E8),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.favorite_border_rounded,
+                color: Color(0xFF4E8D57),
+                size: 38,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3A2F),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black54, height: 1.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _goToFoodDetail(FoodItem food) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
+    );
+  }
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+}

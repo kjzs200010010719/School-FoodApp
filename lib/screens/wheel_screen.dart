@@ -183,7 +183,7 @@ class _WheelScreenState extends State<WheelScreen>
                 child: _buildOptionMenu(
                   label: '預算',
                   value: _filters.maxPrice,
-                  options: const [80, 120, 150],
+                  options: const [80, 120, 150, 200],
                   suffix: '元內',
                   onChanged: (price) =>
                       _updateFilters(_filters.copyWith(maxPrice: price)),

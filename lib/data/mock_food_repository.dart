@@ -42,7 +42,6 @@ class MockFoodRepository {
       ecoPriorityScore: 0.48,
       recommendationReason: '符合你的低脂與均衡需求',
       icon: Icons.set_meal,
-      isFavorite: true,
     ),
     FoodItem(
       id: 'food-003',

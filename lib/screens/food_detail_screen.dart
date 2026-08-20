@@ -1,11 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/food_item.dart';
+import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_info_tag.dart';
 
-class FoodDetailScreen extends StatelessWidget {
+class FoodDetailScreen extends StatefulWidget {
   const FoodDetailScreen({super.key, required this.food});
 
   final FoodItem food;
+
+  @override
+  State<FoodDetailScreen> createState() => _FoodDetailScreenState();
+}
+
+class _FoodDetailScreenState extends State<FoodDetailScreen> {
+  final UserActivityService _activityService = UserActivityService.instance;
+
+  FoodItem get food => widget.food;
+
+  @override
+  void initState() {
+    super.initState();
+    _activityService.addListener(_refresh);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _activityService.addHistory(food);
+    });
+  }
+
+  @override
+  void dispose() {
+    _activityService.removeListener(_refresh);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -298,19 +323,26 @@ class FoodDetailScreen extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context) {
+    final isFavorite = _activityService.isFavorite(food.id);
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
+          _activityService.toggleFavorite(food);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('已將 ${food.name} 加入收藏'),
+              content: Text(
+                isFavorite ? '已將 ${food.name} 移出收藏' : '已將 ${food.name} 加入收藏',
+              ),
               duration: const Duration(seconds: 1),
             ),
           );
         },
-        icon: const Icon(Icons.favorite_rounded),
-        label: const Text('加入收藏'),
+        icon: Icon(
+          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        ),
+        label: Text(isFavorite ? '取消收藏' : '加入收藏'),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF4E8D57),
           foregroundColor: Colors.white,
@@ -321,5 +353,11 @@ class FoodDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }
