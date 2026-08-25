@@ -5,7 +5,9 @@ import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.onOpenCollectionTab});
+
+  final ValueChanged<int>? onOpenCollectionTab;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -186,6 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.favorite_rounded,
             title: '收藏',
             value: '${_activityService.favorites.length}',
+            onTap: () => widget.onOpenCollectionTab?.call(0),
           ),
         ),
         const SizedBox(width: 12),
@@ -194,6 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.history_rounded,
             title: '瀏覽紀錄',
             value: '${_activityService.history.length}',
+            onTap: () => widget.onOpenCollectionTab?.call(1),
           ),
         ),
       ],
@@ -204,29 +208,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required String title,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
         borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: const Color(0xFF4E8D57)),
-          const SizedBox(height: 10),
-          Text(title, style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3A2F),
-            ),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: const Color(0xFF4E8D57)),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(color: Colors.black54),
+                    ),
+                  ),
+                  if (onTap != null)
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.black38,
+                      size: 18,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E3A2F),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

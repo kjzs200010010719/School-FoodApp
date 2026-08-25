@@ -78,4 +78,12 @@ void main() {
     expect(service.searchLogs.first.keyword, '素食');
     expect(service.searchLogs.first.filterSummary, '均衡 / 150 元內');
   });
+
+  test('clears search logs', () {
+    service.addSearchLog(keyword: '雞', filterSummary: '高蛋白');
+
+    service.clearSearchLogs();
+
+    expect(service.searchLogs, isEmpty);
+  });
 }

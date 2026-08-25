@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/search_log.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
+import 'package:my_app/screens/search_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
@@ -28,6 +29,15 @@ class _CollectionScreenState extends State<CollectionScreen>
       vsync: this,
     );
     _activityService.addListener(_refresh);
+  }
+
+  @override
+  void didUpdateWidget(covariant CollectionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.initialTabIndex != widget.initialTabIndex) {
+      _tabController.animateTo(widget.initialTabIndex);
+    }
   }
 
   @override
@@ -162,43 +172,86 @@ class _CollectionScreenState extends State<CollectionScreen>
       return _buildEmptyState('尚無搜尋紀錄', '送出搜尋後，系統會留下最近查過的關鍵字與篩選條件。');
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      itemCount: logs.length,
-      itemBuilder: (context, index) {
-        final log = logs[index];
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                '最近搜尋',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E3A2F),
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _activityService.clearSearchLogs,
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('清除'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...logs.map((log) => _buildSearchLogTile(log)),
+      ],
+    );
+  }
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+  Widget _buildSearchLogTile(SearchLog log) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: ListTile(
+        onTap: () => _goToSearch(log),
+        leading: Container(
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFFEAF5E8),
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: ListTile(
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF5E8),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(Icons.search_rounded, color: Color(0xFF4E8D57)),
-            ),
-            title: Text(
-              log.displayTitle,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E3A2F),
-              ),
-            ),
-            subtitle: Text(log.displaySubtitle),
-            trailing: Text(
+          child: const Icon(Icons.search_rounded, color: Color(0xFF4E8D57)),
+        ),
+        title: Text(
+          log.displayTitle,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3A2F),
+          ),
+        ),
+        subtitle: Text(log.displaySubtitle),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
               log.searchedAtLabel,
               style: const TextStyle(fontSize: 12, color: Colors.black45),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 4),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.black38,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _goToSearch(SearchLog log) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchScreen(initialQuery: log.keyword),
+      ),
     );
   }
 

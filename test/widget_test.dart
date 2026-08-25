@@ -104,6 +104,34 @@ void main() {
     expect(find.text('高蛋白'), findsOneWidget);
   });
 
+  testWidgets('opens search from search log and clears logs', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    UserActivityService.instance.addSearchLog(
+      keyword: '雞',
+      filterSummary: '高蛋白',
+    );
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('收藏').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('搜尋紀錄'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('雞'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('搜尋餐點'), findsOneWidget);
+    expect(find.text('舒肥雞胸餐盒'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('清除'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('尚無搜尋紀錄'), findsOneWidget);
+  });
+
   testWidgets('redirects to login before opening protected features', (
     WidgetTester tester,
   ) async {
@@ -132,5 +160,29 @@ void main() {
 
     expect(find.text('測試使用者'), findsOneWidget);
     expect(find.text('飲食偏好'), findsOneWidget);
+  });
+
+  testWidgets('opens collection tabs from profile stats', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('收藏').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('收藏與紀錄'), findsOneWidget);
+    expect(find.text('尚未收藏餐點'), findsOneWidget);
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('瀏覽紀錄').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('收藏與紀錄'), findsOneWidget);
+    expect(find.text('尚無瀏覽紀錄'), findsOneWidget);
   });
 }

@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _homeSearchController = TextEditingController();
   FoodSearchFilters _homeSearchFilters = const FoodSearchFilters();
   int _currentIndex = 0;
+  int _collectionTabIndex = 0;
 
   final List<FoodItem> expiringFoods = MockFoodRepository.expiringFoods;
 
@@ -151,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _goToCollection() async {
+  Future<void> _goToCollection({int initialTabIndex = 0}) async {
     if (!await _ensureLoggedIn()) {
       return;
     }
@@ -161,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (mounted) {
       setState(() {
+        _collectionTabIndex = initialTabIndex;
         _currentIndex = 3;
       });
     }
@@ -254,8 +256,11 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildHomeBody(),
           const RecommendationScreen(),
           const WheelScreen(),
-          const CollectionScreen(),
-          const ProfileScreen(),
+          CollectionScreen(initialTabIndex: _collectionTabIndex),
+          ProfileScreen(
+            onOpenCollectionTab: (tabIndex) =>
+                _goToCollection(initialTabIndex: tabIndex),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

@@ -97,6 +97,12 @@ class UserActivityService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearSearchLogs() {
+    _searchLogs.clear();
+    _persistSearchLogs();
+    notifyListeners();
+  }
+
   void _restoreFavorites() {
     final favoriteIds = _preferences?.getStringList(_favoriteIdsKey) ?? [];
 
