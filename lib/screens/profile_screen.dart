@@ -396,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     DropdownButtonFormField<int>(
                       initialValue: budgetMax,
                       decoration: const InputDecoration(labelText: '預算上限'),
-                      items: const [80, 120, 150, 200]
+                      items: const [80, 120, 150, 200, 300]
                           .map(
                             (value) => DropdownMenuItem<int>(
                               value: value,
