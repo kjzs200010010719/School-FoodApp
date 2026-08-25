@@ -1,11 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final service = UserActivityService.instance;
 
-  setUp(service.clearForTesting);
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await service.initialize();
+    service.clearForTesting();
+  });
 
   test('mock foods are not favorite by default', () {
     expect(
@@ -40,5 +45,18 @@ void main() {
       firstFood.id,
       secondFood.id,
     ]);
+  });
+
+  test('restores favorite and history food ids from local storage', () async {
+    final firstFood = MockFoodRepository.allFoods.first;
+    final secondFood = MockFoodRepository.allFoods[1];
+
+    service.toggleFavorite(firstFood);
+    service.addHistory(secondFood);
+
+    await service.initialize();
+
+    expect(service.isFavorite(firstFood.id), isTrue);
+    expect(service.history.map((food) => food.id), [secondFood.id]);
   });
 }

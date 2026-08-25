@@ -21,10 +21,7 @@ class _WheelScreenState extends State<WheelScreen>
   late final AnimationController _animationController;
   late final Animation<double> _turns;
 
-  FoodSearchFilters _filters = const FoodSearchFilters(
-    maxPrice: 150,
-    maxDistanceMeters: 1000,
-  );
+  FoodSearchFilters _filters = const FoodSearchFilters();
   FoodItem? _selectedFood;
 
   List<FoodItem> get _candidates {
@@ -131,7 +128,7 @@ class _WheelScreenState extends State<WheelScreen>
           ),
           const SizedBox(height: 10),
           Text(
-            '目前候選餐點：$candidateCount 項，會提高即期優惠餐點的抽中權重。',
+            '目前候選餐點：$candidateCount 項，請先設定至少一個條件再開始轉盤。',
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -335,7 +332,7 @@ class _WheelScreenState extends State<WheelScreen>
           const SizedBox(height: 8),
           Text(
             _selectedFood == null
-                ? '候選餐點會先依條件篩選，並提高即期餐點權重。'
+                ? '候選餐點會先依你設定的條件篩選，再從符合項目中抽選。'
                 : '${_selectedFood!.storeName} / ${_selectedFood!.priceLabel} / ${_selectedFood!.distanceLabel}',
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.black54, height: 1.5),
@@ -375,7 +372,7 @@ class _WheelScreenState extends State<WheelScreen>
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
           child: Text(
-            '目前沒有符合條件的餐點，請放寬預算或距離。',
+            '請先設定轉盤條件，系統會列出符合條件的候選餐點。',
             style: TextStyle(color: Colors.black54),
           ),
         ),
@@ -408,7 +405,58 @@ class _WheelScreenState extends State<WheelScreen>
                 onFavoritePressed: () => _activityService.toggleFavorite(food),
               ),
             ),
+        if (candidates.length > 3) ...[
+          const SizedBox(height: 4),
+          _buildAllCandidatesDropdown(candidates),
+        ],
       ],
+    );
+  }
+
+  Widget _buildAllCandidatesDropdown(List<FoodItem> candidates) {
+    final hiddenCandidates = candidates.skip(3).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5EDE2)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          iconColor: const Color(0xFF4E8D57),
+          collapsedIconColor: const Color(0xFF4E8D57),
+          title: Text(
+            '查看全部候選餐點（${candidates.length} 項）',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3A2F),
+            ),
+          ),
+          subtitle: Text(
+            '另有 ${hiddenCandidates.length} 項符合目前轉盤條件',
+            style: const TextStyle(color: Colors.black54),
+          ),
+          children: hiddenCandidates
+              .map(
+                (food) => FoodCard(
+                  food: food,
+                  showDistance: true,
+                  variant: food.isExpiringSoon
+                      ? FoodCardVariant.expiring
+                      : FoodCardVariant.recommendation,
+                  isFavorite: _activityService.isFavorite(food.id),
+                  onTap: () => _goToFoodDetail(food),
+                  onFavoritePressed: () =>
+                      _activityService.toggleFavorite(food),
+                ),
+              )
+              .toList(),
+        ),
+      ),
     );
   }
 

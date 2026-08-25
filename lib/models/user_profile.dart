@@ -37,6 +37,30 @@ class UserProfile {
     );
   }
 
+  Map<String, Object?> toJson() {
+    return {
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'dietaryTags': dietaryTags,
+      'budgetMax': budgetMax,
+      'distanceLimitMeters': distanceLimitMeters,
+    };
+  }
+
+  factory UserProfile.fromJson(Map<String, Object?> json) {
+    return UserProfile(
+      name: json['name'] as String? ?? demo.name,
+      email: json['email'] as String? ?? demo.email,
+      phone: json['phone'] as String? ?? demo.phone,
+      dietaryTags:
+          (json['dietaryTags'] as List?)?.whereType<String>().toList() ??
+          demo.dietaryTags,
+      budgetMax: json['budgetMax'] as int?,
+      distanceLimitMeters: json['distanceLimitMeters'] as int?,
+    );
+  }
+
   static const demo = UserProfile(
     name: '測試使用者',
     email: 'demo@foodapp.local',

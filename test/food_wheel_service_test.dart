@@ -8,6 +8,14 @@ import 'package:my_app/services/food_wheel_service.dart';
 void main() {
   const service = FoodWheelService();
 
+  test('returns no candidates before setting wheel filters', () {
+    final candidates = service.getCandidates(
+      foods: MockFoodRepository.allFoods,
+    );
+
+    expect(candidates, isEmpty);
+  });
+
   test('gets wheel candidates from search filters before spinning', () {
     final candidates = service.getCandidates(
       foods: MockFoodRepository.allFoods,
@@ -30,14 +38,17 @@ void main() {
     expect(selectedFood, isNull);
   });
 
-  test('spin picks a food from the provided candidate list', () {
-    final candidates = MockFoodRepository.expiringFoods;
+  test(
+    'spin picks a food from the provided candidate list without weighting',
+    () {
+      final candidates = MockFoodRepository.allFoods.take(4).toList();
 
-    final selectedFood = service.spin(
-      candidates: candidates,
-      random: Random(3),
-    );
+      final selectedFood = service.spin(
+        candidates: candidates,
+        random: Random(3),
+      );
 
-    expect(candidates, contains(selectedFood));
-  });
+      expect(candidates, contains(selectedFood));
+    },
+  );
 }

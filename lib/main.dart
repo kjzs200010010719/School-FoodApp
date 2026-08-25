@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/screens/home_screen.dart';
+import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/services/user_profile_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await UserProfileService.instance.initialize();
+  await UserActivityService.instance.initialize();
   runApp(const MyApp());
 }
 

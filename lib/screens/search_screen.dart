@@ -83,40 +83,45 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              autofocus: widget.initialQuery.isEmpty,
-              textInputAction: TextInputAction.search,
-              onChanged: (_) => _refreshResults(),
-              decoration: InputDecoration(
-                hintText: '餐點、店家、食材或標籤',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: '清除',
-                        onPressed: () {
-                          _searchController.clear();
-                          _refreshResults();
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                controller: _searchController,
+                autofocus: widget.initialQuery.isEmpty,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                onChanged: (_) => _refreshResults(),
+                decoration: InputDecoration(
+                  hintText: '餐點、店家、食材或標籤',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: '清除',
+                          onPressed: () {
+                            _searchController.clear();
+                            _refreshResults();
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
-                filled: true,
-                fillColor: Colors.white,
               ),
             ),
-          ),
-          _buildActiveFilters(),
-          Expanded(child: _buildResults()),
-        ],
+            _buildActiveFilters(),
+            Expanded(child: _buildResults()),
+          ],
+        ),
       ),
     );
   }
@@ -171,6 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return ListView.builder(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       itemCount: _results.length,
       itemBuilder: (context, index) {
@@ -190,6 +196,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _openFilters() {
+    FocusScope.of(context).unfocus();
+
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -207,6 +215,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
             return SafeArea(
               child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 shrinkWrap: true,
                 children: [
@@ -409,6 +419,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _goToFoodDetail(FoodItem food) {
+    FocusScope.of(context).unfocus();
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),

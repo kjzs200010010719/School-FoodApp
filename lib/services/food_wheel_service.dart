@@ -12,6 +12,10 @@ class FoodWheelService {
     required List<FoodItem> foods,
     FoodSearchFilters filters = const FoodSearchFilters(),
   }) {
+    if (!_hasActiveFilters(filters)) {
+      return const [];
+    }
+
     return searchService.search(foods: foods, filters: filters);
   }
 
@@ -21,26 +25,14 @@ class FoodWheelService {
     }
 
     final randomSource = random ?? Random();
-    final totalWeight = candidates.fold<double>(
-      0,
-      (sum, food) => sum + _weight(food),
-    );
-    var ticket = randomSource.nextDouble() * totalWeight;
-
-    for (final food in candidates) {
-      ticket -= _weight(food);
-      if (ticket <= 0) {
-        return food;
-      }
-    }
-
-    return candidates.last;
+    return candidates[randomSource.nextInt(candidates.length)];
   }
 
-  double _weight(FoodItem food) {
-    final ecoWeight = food.ecoPriorityScore * 2;
-    final stockWeight = food.stockCount > 0 ? 0.4 : 0;
-    final expiringWeight = food.isExpiringSoon ? 1.2 : 0;
-    return 1 + ecoWeight + stockWeight + expiringWeight;
+  bool _hasActiveFilters(FoodSearchFilters filters) {
+    return filters.categories.isNotEmpty ||
+        filters.tags.isNotEmpty ||
+        filters.maxPrice != null ||
+        filters.maxDistanceMeters != null ||
+        filters.expiringOnly;
   }
 }

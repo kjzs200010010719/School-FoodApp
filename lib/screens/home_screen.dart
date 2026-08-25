@@ -289,43 +289,48 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeBody() {
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-            _buildSearchBar(),
-            _buildHomeActiveFilters(),
-            const SizedBox(height: 24),
-            _buildQuickActionCard(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
-            const SizedBox(height: 12),
-            ..._recommendedFoods.map(
-              (food) => FoodCard(
-                food: food,
-                isFavorite: _activityService.isFavorite(food.id),
-                onTap: () => _goToFoodDetail(food),
-                onFavoritePressed: () => _toggleFavorite(food),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 20),
+              _buildSearchBar(),
+              _buildHomeActiveFilters(),
+              const SizedBox(height: 24),
+              _buildQuickActionCard(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
+              const SizedBox(height: 12),
+              ..._recommendedFoods.map(
+                (food) => FoodCard(
+                  food: food,
+                  isFavorite: _activityService.isFavorite(food.id),
+                  onTap: () => _goToFoodDetail(food),
+                  onFavoritePressed: () => _toggleFavorite(food),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
-            const SizedBox(height: 12),
-            ...expiringFoods.map(
-              (food) => FoodCard(
-                food: food,
-                variant: FoodCardVariant.expiring,
-                isFavorite: _activityService.isFavorite(food.id),
-                onTap: () => _goToFoodDetail(food),
-                onFavoritePressed: () => _toggleFavorite(food),
+              const SizedBox(height: 24),
+              _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
+              const SizedBox(height: 12),
+              ...expiringFoods.map(
+                (food) => FoodCard(
+                  food: food,
+                  variant: FoodCardVariant.expiring,
+                  isFavorite: _activityService.isFavorite(food.id),
+                  onTap: () => _goToFoodDetail(food),
+                  onFavoritePressed: () => _toggleFavorite(food),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _buildDecisionCard(),
-          ],
+              const SizedBox(height: 24),
+              _buildDecisionCard(),
+            ],
+          ),
         ),
       ),
     );
@@ -485,6 +490,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openHomeFilters() {
+    FocusScope.of(context).unfocus();
+
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -828,6 +835,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _submitHomeSearch() {
+    FocusScope.of(context).unfocus();
     _goToSearch(initialQuery: _homeSearchController.text.trim());
   }
 
