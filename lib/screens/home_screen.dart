@@ -836,6 +836,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _submitHomeSearch() {
     FocusScope.of(context).unfocus();
+    _activityService.addSearchLog(
+      keyword: _homeSearchController.text,
+      filterSummary: _homeSearchFilters.summaryLabel,
+    );
     _goToSearch(initialQuery: _homeSearchController.text.trim());
   }
 

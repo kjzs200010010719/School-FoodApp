@@ -15,6 +15,18 @@ class FoodSearchFilters {
   final int? maxDistanceMeters;
   final bool expiringOnly;
 
+  String get summaryLabel {
+    final labels = <String>[
+      if (expiringOnly) '只看即期',
+      ...categories,
+      ...tags,
+      if (maxPrice != null) '$maxPrice 元內',
+      if (maxDistanceMeters != null) '$maxDistanceMeters 公尺內',
+    ];
+
+    return labels.join(' / ');
+  }
+
   FoodSearchFilters copyWith({
     Set<String>? categories,
     Set<String>? tags,

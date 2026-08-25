@@ -94,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 controller: _searchController,
                 autofocus: widget.initialQuery.isEmpty,
                 textInputAction: TextInputAction.search,
-                onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                onSubmitted: (_) => _submitSearch(),
                 onChanged: (_) => _refreshResults(),
                 decoration: InputDecoration(
                   hintText: '餐點、店家、食材或標籤',
@@ -118,6 +118,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
+            _buildRecentSearches(),
             _buildActiveFilters(),
             Expanded(child: _buildResults()),
           ],
@@ -165,6 +166,52 @@ class _SearchScreenState extends State<SearchScreen> {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Row(children: chips),
+    );
+  }
+
+  Widget _buildRecentSearches() {
+    final logs = _activityService.searchLogs;
+    if (_searchController.text.isNotEmpty || logs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.history_rounded, size: 18, color: Color(0xFF4E8D57)),
+              SizedBox(width: 6),
+              Text(
+                '最近搜尋',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E3A2F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: logs
+                .map(
+                  (log) => ActionChip(
+                    label: Text(log.displayTitle),
+                    avatar: const Icon(Icons.search_rounded, size: 18),
+                    onPressed: () {
+                      _searchController.text = log.keyword;
+                      _refreshResults();
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -376,6 +423,14 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _results = _search();
     });
+  }
+
+  void _submitSearch() {
+    FocusScope.of(context).unfocus();
+    _activityService.addSearchLog(
+      keyword: _searchController.text,
+      filterSummary: _filters.summaryLabel,
+    );
   }
 
   void _updateFilters(FoodSearchFilters filters) {

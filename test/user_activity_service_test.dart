@@ -59,4 +59,23 @@ void main() {
     expect(service.isFavorite(firstFood.id), isTrue);
     expect(service.history.map((food) => food.id), [secondFood.id]);
   });
+
+  test('keeps recent search logs newest first without duplicates', () {
+    service.addSearchLog(keyword: '雞', filterSummary: '高蛋白');
+    service.addSearchLog(keyword: '沙拉', filterSummary: '低脂');
+    service.addSearchLog(keyword: '雞', filterSummary: '高蛋白');
+
+    expect(service.searchLogs.map((log) => log.keyword), ['雞', '沙拉']);
+    expect(service.searchLogs.first.filterSummary, '高蛋白');
+  });
+
+  test('restores search logs from local storage', () async {
+    service.addSearchLog(keyword: '素食', filterSummary: '均衡 / 150 元內');
+
+    await service.initialize();
+
+    expect(service.searchLogs, hasLength(1));
+    expect(service.searchLogs.first.keyword, '素食');
+    expect(service.searchLogs.first.filterSummary, '均衡 / 150 元內');
+  });
 }
