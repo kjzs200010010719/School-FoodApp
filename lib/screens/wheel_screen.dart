@@ -4,6 +4,7 @@ import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/food_search_service.dart';
 import 'package:my_app/services/food_wheel_service.dart';
+import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class WheelScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class WheelScreen extends StatefulWidget {
 class _WheelScreenState extends State<WheelScreen>
     with SingleTickerProviderStateMixin {
   final FoodWheelService _wheelService = const FoodWheelService();
+  final UserActivityService _activityService = UserActivityService.instance;
   late final AnimationController _animationController;
   late final Animation<double> _turns;
 
@@ -32,6 +34,22 @@ class _WheelScreenState extends State<WheelScreen>
     );
   }
 
+  List<String> get _categories {
+    return MockFoodRepository.allFoods
+        .map((food) => food.category)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<String> get _tags {
+    return MockFoodRepository.allFoods
+        .expand((food) => food.tags)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,10 +60,12 @@ class _WheelScreenState extends State<WheelScreen>
     _turns = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
+    _activityService.addListener(_refresh);
   }
 
   @override
   void dispose() {
+    _activityService.removeListener(_refresh);
     _animationController.dispose();
     super.dispose();
   }
@@ -159,34 +179,47 @@ class _WheelScreenState extends State<WheelScreen>
                 onSelected: (selected) =>
                     _updateFilters(_filters.copyWith(expiringOnly: selected)),
               ),
-              FilterChip(
-                label: const Text('高蛋白'),
-                selected: _filters.tags.contains('高蛋白'),
-                onSelected: (_) => _toggleTag('高蛋白'),
-              ),
-              FilterChip(
-                label: const Text('低脂'),
-                selected: _filters.tags.contains('低脂'),
-                onSelected: (_) => _toggleTag('低脂'),
-              ),
-              FilterChip(
-                label: const Text('均衡'),
-                selected: _filters.tags.contains('均衡'),
-                onSelected: (_) => _toggleTag('均衡'),
-              ),
             ],
           ),
           const SizedBox(height: 14),
+          _buildChipSection(
+            title: '餐點類型',
+            children: _categories
+                .map(
+                  (category) => FilterChip(
+                    label: Text(category),
+                    selected: _filters.categories.contains(category),
+                    onSelected: (_) => _toggleCategory(category),
+                  ),
+                )
+                .toList(),
+          ),
+          _buildChipSection(
+            title: '偏好標籤',
+            children: _tags
+                .map(
+                  (tag) => FilterChip(
+                    label: Text(tag),
+                    selected: _filters.tags.contains(tag),
+                    onSelected: (_) => _toggleTag(tag),
+                  ),
+                )
+                .toList(),
+          ),
           Row(
             children: [
               Expanded(
                 child: _buildOptionMenu(
                   label: '預算',
                   value: _filters.maxPrice,
-                  options: const [80, 120, 150, 200],
+                  options: const [80, 120, 150, 200, 300],
                   suffix: '元內',
-                  onChanged: (price) =>
-                      _updateFilters(_filters.copyWith(maxPrice: price)),
+                  onChanged: (price) => _updateFilters(
+                    _filters.copyWith(
+                      maxPrice: price,
+                      clearMaxPrice: price == null,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -194,10 +227,13 @@ class _WheelScreenState extends State<WheelScreen>
                 child: _buildOptionMenu(
                   label: '距離',
                   value: _filters.maxDistanceMeters,
-                  options: const [500, 800, 1000],
+                  options: const [500, 800, 1000, 1500],
                   suffix: '公尺內',
                   onChanged: (distance) => _updateFilters(
-                    _filters.copyWith(maxDistanceMeters: distance),
+                    _filters.copyWith(
+                      maxDistanceMeters: distance,
+                      clearMaxDistance: distance == null,
+                    ),
                   ),
                 ),
               ),
@@ -208,14 +244,37 @@ class _WheelScreenState extends State<WheelScreen>
     );
   }
 
+  Widget _buildChipSection({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3A2F),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: children),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOptionMenu({
     required String label,
     required int? value,
     required List<int> options,
     required String suffix,
-    required ValueChanged<int> onChanged,
+    required ValueChanged<int?> onChanged,
   }) {
-    return DropdownButtonFormField<int>(
+    return DropdownButtonFormField<int?>(
       initialValue: value,
       decoration: InputDecoration(
         labelText: label,
@@ -225,19 +284,15 @@ class _WheelScreenState extends State<WheelScreen>
           vertical: 10,
         ),
       ),
-      items: options
+      items: <int?>[...options, null]
           .map(
-            (option) => DropdownMenuItem<int>(
+            (option) => DropdownMenuItem<int?>(
               value: option,
-              child: Text('$option $suffix'),
+              child: Text(option == null ? '不限' : '$option $suffix'),
             ),
           )
           .toList(),
-      onChanged: (option) {
-        if (option != null) {
-          onChanged(option);
-        }
-      },
+      onChanged: onChanged,
     );
   }
 
@@ -348,7 +403,9 @@ class _WheelScreenState extends State<WheelScreen>
                 variant: food.isExpiringSoon
                     ? FoodCardVariant.expiring
                     : FoodCardVariant.recommendation,
+                isFavorite: _activityService.isFavorite(food.id),
                 onTap: () => _goToFoodDetail(food),
+                onFavoritePressed: () => _activityService.toggleFavorite(food),
               ),
             ),
       ],
@@ -378,10 +435,24 @@ class _WheelScreenState extends State<WheelScreen>
     _updateFilters(_filters.copyWith(tags: tags));
   }
 
+  void _toggleCategory(String category) {
+    final categories = {..._filters.categories};
+    categories.contains(category)
+        ? categories.remove(category)
+        : categories.add(category);
+    _updateFilters(_filters.copyWith(categories: categories));
+  }
+
   void _goToFoodDetail(FoodItem food) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
     );
+  }
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

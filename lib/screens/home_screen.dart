@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
+import 'package:my_app/models/user_preference.dart';
 import 'package:my_app/screens/collection_screen.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
 import 'package:my_app/screens/search_screen.dart';
 import 'package:my_app/screens/wheel_screen.dart';
+import 'package:my_app/services/food_search_service.dart';
+import 'package:my_app/services/recommendation_service.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
 import 'package:my_app/widgets/food_card.dart';
@@ -21,9 +24,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final UserActivityService _activityService = UserActivityService.instance;
   final UserProfileService _profileService = UserProfileService.instance;
+  final RecommendationService _recommendationService =
+      const RecommendationService();
+  final TextEditingController _homeSearchController = TextEditingController();
+  FoodSearchFilters _homeSearchFilters = const FoodSearchFilters();
   int _currentIndex = 0;
 
-  final List<FoodItem> recommendedFoods = MockFoodRepository.recommendedPreview;
   final List<FoodItem> expiringFoods = MockFoodRepository.expiringFoods;
 
   @override
@@ -37,25 +43,62 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _activityService.removeListener(_refresh);
     _profileService.removeListener(_refresh);
+    _homeSearchController.dispose();
     super.dispose();
+  }
+
+  List<String> get _categories {
+    return MockFoodRepository.allFoods
+        .map((food) => food.category)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<String> get _tags {
+    return MockFoodRepository.allFoods
+        .expand((food) => food.tags)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<FoodItem> get _recommendedFoods {
+    return _recommendationService
+        .getRecommendations(
+          foods: MockFoodRepository.allFoods,
+          preference: _currentPreference,
+        )
+        .take(3)
+        .toList();
+  }
+
+  UserPreference get _currentPreference {
+    final profile = _profileService.profile;
+
+    if (profile == null) {
+      return UserPreference.defaultPreference;
+    }
+
+    return UserPreference(
+      dietaryPreferences: profile.dietaryTags,
+      budgetMin: 0,
+      budgetMax: profile.budgetMax ?? 999999,
+      distanceLimitMeters: profile.distanceLimitMeters ?? 999999,
+      preferredTags: profile.dietaryTags,
+      avoidIngredients: const [],
+      wasteReductionEnabled: true,
+    );
   }
 
   Future<void> _goToRecommendation() async {
     if (!await _ensureLoggedIn()) {
       return;
     }
-    if (!mounted) {
-      return;
-    }
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RecommendationScreen()),
-    );
 
     if (mounted) {
       setState(() {
-        _currentIndex = 0;
+        _currentIndex = 1;
       });
     }
   }
@@ -85,7 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SearchScreen(initialQuery: initialQuery),
+        builder: (context) => SearchScreen(
+          initialQuery: initialQuery,
+          initialFilters: _homeSearchFilters,
+        ),
       ),
     );
   }
@@ -98,19 +144,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const WheelScreen()),
-    );
-
     if (mounted) {
       setState(() {
-        _currentIndex = 0;
+        _currentIndex = 2;
       });
     }
   }
 
-  Future<void> _goToCollection({int initialTabIndex = 0}) async {
+  Future<void> _goToCollection() async {
     if (!await _ensureLoggedIn()) {
       return;
     }
@@ -118,30 +159,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            CollectionScreen(initialTabIndex: initialTabIndex),
-      ),
-    );
-
     if (mounted) {
       setState(() {
-        _currentIndex = 0;
+        _currentIndex = 3;
       });
     }
   }
 
   Future<void> _goToProfile() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-    );
-
     if (mounted) {
       setState(() {
-        _currentIndex = 0;
+        _currentIndex = 4;
       });
     }
   }
@@ -151,7 +179,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return true;
     }
 
-    await _goToProfile();
+    if (mounted) {
+      setState(() {
+        _currentIndex = 4;
+      });
+    }
     return false;
   }
 
@@ -164,34 +196,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (index == 1) {
-      setState(() {
-        _currentIndex = 1;
-      });
-
       await _goToRecommendation();
-
-      if (mounted) {
-        setState(() {
-          _currentIndex = 0;
-        });
-      }
       return;
     }
 
     if (index == 2) {
-      setState(() {
-        _currentIndex = 2;
-      });
-
       await _goToWheel();
       return;
     }
 
     if (index == 3) {
-      setState(() {
-        _currentIndex = 3;
-      });
-
       await _goToCollection();
       return;
     }
@@ -234,45 +248,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 20),
-              _buildSearchBar(),
-              const SizedBox(height: 24),
-              _buildQuickActionCard(),
-              const SizedBox(height: 24),
-              _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
-              const SizedBox(height: 12),
-              ...recommendedFoods.map(
-                (food) => FoodCard(
-                  food: food,
-                  isFavorite: _activityService.isFavorite(food.id),
-                  onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () => _toggleFavorite(food),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
-              const SizedBox(height: 12),
-              ...expiringFoods.map(
-                (food) => FoodCard(
-                  food: food,
-                  variant: FoodCardVariant.expiring,
-                  isFavorite: _activityService.isFavorite(food.id),
-                  onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () => _toggleFavorite(food),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildDecisionCard(),
-            ],
-          ),
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          _buildHomeBody(),
+          const RecommendationScreen(),
+          const WheelScreen(),
+          const CollectionScreen(),
+          const ProfileScreen(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -299,6 +283,50 @@ class _HomeScreenState extends State<HomeScreen> {
             label: '我的',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHomeBody() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 20),
+            _buildSearchBar(),
+            _buildHomeActiveFilters(),
+            const SizedBox(height: 24),
+            _buildQuickActionCard(),
+            const SizedBox(height: 24),
+            _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
+            const SizedBox(height: 12),
+            ..._recommendedFoods.map(
+              (food) => FoodCard(
+                food: food,
+                isFavorite: _activityService.isFavorite(food.id),
+                onTap: () => _goToFoodDetail(food),
+                onFavoritePressed: () => _toggleFavorite(food),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
+            const SizedBox(height: 12),
+            ...expiringFoods.map(
+              (food) => FoodCard(
+                food: food,
+                variant: FoodCardVariant.expiring,
+                isFavorite: _activityService.isFavorite(food.id),
+                onTap: () => _goToFoodDetail(food),
+                onFavoritePressed: () => _toggleFavorite(food),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildDecisionCard(),
+          ],
+        ),
       ),
     );
   }
@@ -353,41 +381,292 @@ class _HomeScreenState extends State<HomeScreen> {
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: _goToSearch,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.search_rounded, color: Colors.black54),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  '搜尋你想吃的餐點、店家...',
-                  style: TextStyle(fontSize: 16, color: Colors.black45),
-                  overflow: TextOverflow.ellipsis,
+      child: Container(
+        padding: const EdgeInsets.only(left: 14, right: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.search_rounded, color: Colors.black54),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _homeSearchController,
+                textInputAction: TextInputAction.search,
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (value) => _submitHomeSearch(),
+                decoration: const InputDecoration(
+                  hintText: '搜尋你想吃的餐點、店家...',
+                  border: InputBorder.none,
+                  isDense: true,
                 ),
               ),
+            ),
+            if (_homeSearchController.text.isNotEmpty)
               IconButton(
-                tooltip: '篩選',
-                onPressed: _goToSearch,
-                icon: const Icon(Icons.tune_rounded),
+                tooltip: '清除',
+                onPressed: () {
+                  setState(() {
+                    _homeSearchController.clear();
+                  });
+                },
+                icon: const Icon(Icons.close_rounded),
               ),
-            ],
-          ),
+            IconButton(
+              tooltip: '篩選',
+              onPressed: _openHomeFilters,
+              icon: const Icon(Icons.tune_rounded),
+            ),
+            IconButton(
+              tooltip: '搜尋',
+              onPressed: _submitHomeSearch,
+              icon: const Icon(Icons.arrow_forward_rounded),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHomeActiveFilters() {
+    final chips = <Widget>[
+      if (_homeSearchFilters.expiringOnly)
+        InputChip(
+          label: const Text('只看即期'),
+          onDeleted: () => _updateHomeFilters(
+            _homeSearchFilters.copyWith(expiringOnly: false),
+          ),
+        ),
+      ..._homeSearchFilters.categories.map(
+        (category) => InputChip(
+          label: Text(category),
+          onDeleted: () => _toggleHomeCategory(category),
+        ),
+      ),
+      ..._homeSearchFilters.tags.map(
+        (tag) =>
+            InputChip(label: Text(tag), onDeleted: () => _toggleHomeTag(tag)),
+      ),
+      if (_homeSearchFilters.maxPrice != null)
+        InputChip(
+          label: Text('${_homeSearchFilters.maxPrice} 元內'),
+          onDeleted: () => _updateHomeFilters(
+            _homeSearchFilters.copyWith(clearMaxPrice: true),
+          ),
+        ),
+      if (_homeSearchFilters.maxDistanceMeters != null)
+        InputChip(
+          label: Text('${_homeSearchFilters.maxDistanceMeters} 公尺內'),
+          onDeleted: () => _updateHomeFilters(
+            _homeSearchFilters.copyWith(clearMaxDistance: true),
+          ),
+        ),
+    ];
+
+    if (chips.isEmpty) {
+      return const SizedBox(height: 0);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: chips),
+      ),
+    );
+  }
+
+  void _openHomeFilters() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        var draftFilters = _homeSearchFilters;
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void updateDraft(FoodSearchFilters filters) {
+              setSheetState(() {
+                draftFilters = filters;
+              });
+            }
+
+            return SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                shrinkWrap: true,
+                children: [
+                  const Text(
+                    '搜尋篩選',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E3A2F),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('只看即期優惠'),
+                    value: draftFilters.expiringOnly,
+                    onChanged: (value) =>
+                        updateDraft(draftFilters.copyWith(expiringOnly: value)),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildHomeFilterSection(
+                    title: '餐點類型',
+                    children: _categories
+                        .map(
+                          (category) => FilterChip(
+                            label: Text(category),
+                            selected: draftFilters.categories.contains(
+                              category,
+                            ),
+                            onSelected: (_) => updateDraft(
+                              _homeFiltersWithCategory(draftFilters, category),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  _buildHomeFilterSection(
+                    title: '偏好標籤',
+                    children: _tags
+                        .map(
+                          (tag) => FilterChip(
+                            label: Text(tag),
+                            selected: draftFilters.tags.contains(tag),
+                            onSelected: (_) => updateDraft(
+                              _homeFiltersWithTag(draftFilters, tag),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  _buildHomePriceOptions(draftFilters, updateDraft),
+                  _buildHomeDistanceOptions(draftFilters, updateDraft),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () =>
+                              updateDraft(const FoodSearchFilters()),
+                          child: const Text('清除'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            _updateHomeFilters(draftFilters);
+                            Navigator.pop(context);
+                          },
+                          child: const Text('套用'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildHomeFilterSection({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3A2F),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: children),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomePriceOptions(
+    FoodSearchFilters draftFilters,
+    ValueChanged<FoodSearchFilters> onChanged,
+  ) {
+    const options = [80, 120, 150, 200, 300];
+
+    return _buildHomeFilterSection(
+      title: '預算上限',
+      children: [
+        ChoiceChip(
+          label: const Text('不限'),
+          selected: draftFilters.maxPrice == null,
+          onSelected: (_) =>
+              onChanged(draftFilters.copyWith(clearMaxPrice: true)),
+        ),
+        ...options.map(
+          (price) => ChoiceChip(
+            label: Text('$price 元內'),
+            selected: draftFilters.maxPrice == price,
+            onSelected: (selected) => onChanged(
+              draftFilters.copyWith(
+                maxPrice: selected ? price : null,
+                clearMaxPrice: !selected,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHomeDistanceOptions(
+    FoodSearchFilters draftFilters,
+    ValueChanged<FoodSearchFilters> onChanged,
+  ) {
+    const options = [500, 800, 1000, 1500];
+
+    return _buildHomeFilterSection(
+      title: '距離上限',
+      children: [
+        ChoiceChip(
+          label: const Text('不限'),
+          selected: draftFilters.maxDistanceMeters == null,
+          onSelected: (_) =>
+              onChanged(draftFilters.copyWith(clearMaxDistance: true)),
+        ),
+        ...options.map(
+          (distance) => ChoiceChip(
+            label: Text('$distance 公尺內'),
+            selected: draftFilters.maxDistanceMeters == distance,
+            onSelected: (selected) => onChanged(
+              draftFilters.copyWith(
+                maxDistanceMeters: selected ? distance : null,
+                clearMaxDistance: !selected,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -546,6 +825,41 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _activityService.toggleFavorite(food);
+  }
+
+  void _submitHomeSearch() {
+    _goToSearch(initialQuery: _homeSearchController.text.trim());
+  }
+
+  void _updateHomeFilters(FoodSearchFilters filters) {
+    setState(() {
+      _homeSearchFilters = filters;
+    });
+  }
+
+  void _toggleHomeCategory(String category) {
+    _updateHomeFilters(_homeFiltersWithCategory(_homeSearchFilters, category));
+  }
+
+  void _toggleHomeTag(String tag) {
+    _updateHomeFilters(_homeFiltersWithTag(_homeSearchFilters, tag));
+  }
+
+  FoodSearchFilters _homeFiltersWithCategory(
+    FoodSearchFilters filters,
+    String category,
+  ) {
+    final categories = {...filters.categories};
+    categories.contains(category)
+        ? categories.remove(category)
+        : categories.add(category);
+    return filters.copyWith(categories: categories);
+  }
+
+  FoodSearchFilters _homeFiltersWithTag(FoodSearchFilters filters, String tag) {
+    final tags = {...filters.tags};
+    tags.contains(tag) ? tags.remove(tag) : tags.add(tag);
+    return filters.copyWith(tags: tags);
   }
 
   void _refresh() {

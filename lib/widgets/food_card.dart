@@ -113,8 +113,11 @@ class FoodCard extends StatelessWidget {
   }
 
   List<Widget> _buildTags() {
+    final tagWidgets = food.tags.take(3).map((tag) => FoodInfoTag(text: tag));
+
     if (_isExpiring) {
       return [
+        ...tagWidgets,
         if (food.discountLabel != null)
           FoodInfoTag(text: food.discountLabel!, warning: true),
         FoodInfoTag(text: food.timeLeftLabel, warning: true),
@@ -123,7 +126,7 @@ class FoodCard extends StatelessWidget {
     }
 
     return [
-      FoodInfoTag(text: food.tags.first),
+      ...tagWidgets,
       FoodInfoTag(text: food.priceLabel),
       if (showDistance) FoodInfoTag(text: food.distanceLabel),
     ];
@@ -136,8 +139,8 @@ class FoodCard extends StatelessWidget {
       return IconButton(
         onPressed: onFavoritePressed,
         icon: Icon(
-          favorite ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-          color: favorite ? const Color(0xFFD68A00) : null,
+          favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          color: favorite ? Colors.redAccent : const Color(0xFFD68A00),
         ),
       );
     }

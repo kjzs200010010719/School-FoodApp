@@ -12,8 +12,8 @@ class UserProfile {
   final String email;
   final String phone;
   final List<String> dietaryTags;
-  final int budgetMax;
-  final int distanceLimitMeters;
+  final int? budgetMax;
+  final int? distanceLimitMeters;
 
   UserProfile copyWith({
     String? name,
@@ -22,14 +22,18 @@ class UserProfile {
     List<String>? dietaryTags,
     int? budgetMax,
     int? distanceLimitMeters,
+    bool clearBudgetMax = false,
+    bool clearDistanceLimit = false,
   }) {
     return UserProfile(
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       dietaryTags: dietaryTags ?? this.dietaryTags,
-      budgetMax: budgetMax ?? this.budgetMax,
-      distanceLimitMeters: distanceLimitMeters ?? this.distanceLimitMeters,
+      budgetMax: clearBudgetMax ? null : budgetMax ?? this.budgetMax,
+      distanceLimitMeters: clearDistanceLimit
+          ? null
+          : distanceLimitMeters ?? this.distanceLimitMeters,
     );
   }
 

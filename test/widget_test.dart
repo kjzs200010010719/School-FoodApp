@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/main.dart';
 import 'package:my_app/services/user_activity_service.dart';
@@ -14,7 +15,7 @@ void main() {
 
     expect(find.text('膳解人意'), findsOneWidget);
     expect(find.text('今日推薦'), findsOneWidget);
-    expect(find.text('即期優惠'), findsOneWidget);
+    expect(find.text('即期優惠'), findsWidgets);
     expect(find.text('查看推薦'), findsOneWidget);
   });
 
@@ -24,6 +25,11 @@ void main() {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
+    await tester.scrollUntilVisible(
+      find.text('舒肥雞胸餐盒'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('舒肥雞胸餐盒'));
     await tester.pumpAndSettle();
 
@@ -31,17 +37,19 @@ void main() {
     expect(find.text('推薦原因'), findsOneWidget);
   });
 
-  testWidgets('opens search screen from home search field', (
+  testWidgets('opens search screen after submitting home search', (
     WidgetTester tester,
   ) async {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
-    await tester.tap(find.text('搜尋你想吃的餐點、店家...'));
+    await tester.enterText(find.byType(TextField).first, '雞');
+    await tester.tap(find.byIcon(Icons.arrow_forward_rounded));
     await tester.pumpAndSettle();
 
     expect(find.text('搜尋餐點'), findsOneWidget);
     expect(find.text('餐點、店家、食材或標籤'), findsOneWidget);
+    expect(find.text('舒肥雞胸餐盒'), findsOneWidget);
   });
 
   testWidgets('opens wheel screen from home quick action', (

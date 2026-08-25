@@ -33,7 +33,9 @@ class RecommendationService {
     final tagMatches = food.tags
         .where((tag) => preference.preferredTags.contains(tag))
         .length;
-    final preferenceScore = tagMatches / preference.preferredTags.length;
+    final preferenceScore = preference.preferredTags.isEmpty
+        ? 0.5
+        : tagMatches / preference.preferredTags.length;
     final distanceScore =
         1 - (food.distanceMeters / preference.distanceLimitMeters);
     final budgetCenter = (preference.budgetMin + preference.budgetMax) / 2;

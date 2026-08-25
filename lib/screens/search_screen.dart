@@ -3,12 +3,18 @@ import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/food_search_service.dart';
+import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, this.initialQuery = ''});
+  const SearchScreen({
+    super.key,
+    this.initialQuery = '',
+    this.initialFilters = const FoodSearchFilters(),
+  });
 
   final String initialQuery;
+  final FoodSearchFilters initialFilters;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -16,6 +22,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final FoodSearchService _searchService = const FoodSearchService();
+  final UserActivityService _activityService = UserActivityService.instance;
   late final TextEditingController _searchController;
   FoodSearchFilters _filters = const FoodSearchFilters();
   late List<FoodItem> _results;
@@ -40,11 +47,14 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
+    _filters = widget.initialFilters;
     _results = _search();
+    _activityService.addListener(_refresh);
   }
 
   @override
   void dispose() {
+    _activityService.removeListener(_refresh);
     _searchController.dispose();
     super.dispose();
   }
@@ -171,7 +181,9 @@ class _SearchScreenState extends State<SearchScreen> {
           variant: food.isExpiringSoon
               ? FoodCardVariant.expiring
               : FoodCardVariant.recommendation,
+          isFavorite: _activityService.isFavorite(food.id),
           onTap: () => _goToFoodDetail(food),
+          onFavoritePressed: () => _activityService.toggleFavorite(food),
         );
       },
     );
@@ -401,5 +413,11 @@ class _SearchScreenState extends State<SearchScreen> {
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
     );
+  }
+
+  void _refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

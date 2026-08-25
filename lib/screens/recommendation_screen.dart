@@ -5,10 +5,13 @@ import 'package:my_app/models/user_preference.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/recommendation_service.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/services/user_profile_service.dart';
 import 'package:my_app/widgets/food_card.dart';
 
 class RecommendationScreen extends StatefulWidget {
-  const RecommendationScreen({super.key});
+  const RecommendationScreen({super.key, this.showAppBar = true});
+
+  final bool showAppBar;
 
   @override
   State<RecommendationScreen> createState() => _RecommendationScreenState();
@@ -18,22 +21,21 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   final RecommendationService _recommendationService =
       const RecommendationService();
   final UserActivityService _activityService = UserActivityService.instance;
-  final UserPreference _preference = UserPreference.defaultPreference;
+  final UserProfileService _profileService = UserProfileService.instance;
   late List<FoodItem> recommendedFoods;
 
   @override
   void initState() {
     super.initState();
-    recommendedFoods = _recommendationService.getRecommendations(
-      foods: MockFoodRepository.allFoods,
-      preference: _preference,
-    );
+    recommendedFoods = _buildRecommendations();
     _activityService.addListener(_refresh);
+    _profileService.addListener(_refreshRecommendations);
   }
 
   @override
   void dispose() {
     _activityService.removeListener(_refresh);
+    _profileService.removeListener(_refreshRecommendations);
     super.dispose();
   }
 
@@ -41,19 +43,21 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F9F4),
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          '推薦餐點',
-          style: TextStyle(
-            color: Color(0xFF2E3A2F),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF2E3A2F)),
-      ),
+      appBar: widget.showAppBar
+          ? AppBar(
+              backgroundColor: const Color(0xFFF7F9F4),
+              elevation: 0,
+              centerTitle: true,
+              title: const Text(
+                '推薦餐點',
+                style: TextStyle(
+                  color: Color(0xFF2E3A2F),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              iconTheme: const IconThemeData(color: Color(0xFF2E3A2F)),
+            )
+          : null,
       body: Column(
         children: [
           _buildTopSummary(),
@@ -111,9 +115,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            '推薦依據：${_preference.preferredTags.take(3).join(' / ')} / '
-            '預算 ${_preference.budgetMin}-${_preference.budgetMax} 元 / '
-            '距離 ${_preference.distanceLimitMeters ~/ 1000} 公里內',
+            _summaryText,
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -123,6 +125,47 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         ],
       ),
     );
+  }
+
+  List<FoodItem> _buildRecommendations() {
+    return _recommendationService.getRecommendations(
+      foods: MockFoodRepository.allFoods,
+      preference: _currentPreference,
+    );
+  }
+
+  UserPreference get _currentPreference {
+    final profile = _profileService.profile;
+
+    if (profile == null) {
+      return UserPreference.defaultPreference;
+    }
+
+    return UserPreference(
+      dietaryPreferences: profile.dietaryTags,
+      budgetMin: 0,
+      budgetMax: profile.budgetMax ?? 999999,
+      distanceLimitMeters: profile.distanceLimitMeters ?? 999999,
+      preferredTags: profile.dietaryTags,
+      avoidIngredients: const [],
+      wasteReductionEnabled: true,
+    );
+  }
+
+  String get _summaryText {
+    final profile = _profileService.profile;
+    final preference = _currentPreference;
+    final tags = preference.preferredTags.isEmpty
+        ? '未設定偏好'
+        : preference.preferredTags.take(3).join(' / ');
+    final budget = profile?.budgetMax == null
+        ? '預算不限'
+        : '預算 ${profile!.budgetMax} 元內';
+    final distance = profile?.distanceLimitMeters == null
+        ? '距離不限'
+        : '距離 ${profile!.distanceLimitMeters} 公尺內';
+
+    return '推薦依據：$tags / $budget / $distance';
   }
 
   void _goToFoodDetail(FoodItem food) {
@@ -135,6 +178,14 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   void _refresh() {
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  void _refreshRecommendations() {
+    if (mounted) {
+      setState(() {
+        recommendedFoods = _buildRecommendations();
+      });
     }
   }
 }

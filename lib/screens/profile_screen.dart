@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/user_profile.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
@@ -267,8 +268,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 .toList(),
           ),
           const SizedBox(height: 14),
-          _buildPreferenceRow('預算上限', '${profile.budgetMax} 元'),
-          _buildPreferenceRow('距離上限', '${profile.distanceLimitMeters} 公尺'),
+          _buildPreferenceRow('預算上限', _budgetLabel(profile.budgetMax)),
+          _buildPreferenceRow(
+            '距離上限',
+            _distanceLabel(profile.distanceLimitMeters),
+          ),
         ],
       ),
     );
@@ -323,8 +327,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final emailController = TextEditingController(text: profile.email);
     final phoneController = TextEditingController(text: profile.phone);
     var selectedTags = {...profile.dietaryTags};
-    var budgetMax = profile.budgetMax;
-    var distanceLimit = profile.distanceLimitMeters;
+    int? budgetMax = profile.budgetMax;
+    int? distanceLimit = profile.distanceLimitMeters;
+    final availableTags =
+        MockFoodRepository.allFoods.expand((food) => food.tags).toSet().toList()
+          ..sort();
 
     showModalBottomSheet<void>(
       context: context,
@@ -382,7 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: ['高蛋白', '低脂', '均衡', '即期優惠', '輕食']
+                      children: availableTags
                           .map(
                             (tag) => FilterChip(
                               label: Text(tag),
@@ -393,38 +400,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           .toList(),
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
                       initialValue: budgetMax,
                       decoration: const InputDecoration(labelText: '預算上限'),
-                      items: const [80, 120, 150, 200, 300]
+                      items: <int?>[80, 120, 150, 200, 300, null]
                           .map(
-                            (value) => DropdownMenuItem<int>(
+                            (value) => DropdownMenuItem<int?>(
                               value: value,
-                              child: Text('$value 元'),
+                              child: Text(value == null ? '不限' : '$value 元'),
                             ),
                           )
                           .toList(),
                       onChanged: (value) {
-                        if (value != null) {
+                        setSheetState(() {
                           budgetMax = value;
-                        }
+                        });
                       },
                     ),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
                       initialValue: distanceLimit,
                       decoration: const InputDecoration(labelText: '距離上限'),
-                      items: const [500, 800, 1000, 1500]
+                      items: <int?>[500, 800, 1000, 1500, null]
                           .map(
-                            (value) => DropdownMenuItem<int>(
+                            (value) => DropdownMenuItem<int?>(
                               value: value,
-                              child: Text('$value 公尺'),
+                              child: Text(value == null ? '不限' : '$value 公尺'),
                             ),
                           )
                           .toList(),
                       onChanged: (value) {
-                        if (value != null) {
+                        setSheetState(() {
                           distanceLimit = value;
-                        }
+                        });
                       },
                     ),
                     const SizedBox(height: 18),
@@ -438,6 +445,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             dietaryTags: selectedTags.toList(),
                             budgetMax: budgetMax,
                             distanceLimitMeters: distanceLimit,
+                            clearBudgetMax: budgetMax == null,
+                            clearDistanceLimit: distanceLimit == null,
                           ),
                         );
                         Navigator.pop(context);
@@ -458,5 +467,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  String _budgetLabel(int? budgetMax) {
+    return budgetMax == null ? '不限' : '$budgetMax 元';
+  }
+
+  String _distanceLabel(int? distanceLimitMeters) {
+    return distanceLimitMeters == null ? '不限' : '$distanceLimitMeters 公尺';
   }
 }
