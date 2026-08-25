@@ -6,6 +6,15 @@
 
 接下來我們會先在本機建立後端 API 與 MySQL 資料庫，等本機測試穩定後，再把 API 和資料庫部署到學校雲端伺服器。
 
+這份文件主要用來整理後端之後要提供哪些資料給 App。前端目前已經先做出可操作的流程，但資料仍是寫在本機端，因此下一步需要把餐點、會員、收藏、瀏覽紀錄與推薦結果整理成 API，讓系統架構逐漸接近初審文件中規劃的完整版本。
+
+## 本階段目的
+
+- 先確認 Flutter App 需要哪些資料欄位，避免後端資料表設計後才發現前端不夠用。
+- 先在本機完成 API 與 MySQL 測試，降低一開始就部署到伺服器造成的除錯成本。
+- 讓推薦、搜尋、收藏、瀏覽紀錄這些功能未來可以從 mock data 平順改成資料庫資料。
+- 保留學校雲端伺服器作為展示與正式測試環境，而不是目前開發初期就直接依賴它。
+
 ## 開發順序
 
 1. 前端先固定資料模型
@@ -133,4 +142,34 @@
 - `UserRepository`
 - `RecommendationRepository`
 
-畫面層不要直接處理 HTTP，應由 repository/service 封裝，方便保留 mock 與 API 兩種資料來源。
+串接時會先保留目前的 mock repository，再另外建立 API repository。這樣做的原因是，如果後端還在調整，前端畫面仍然可以用 mock data 繼續測試；等 API 穩定後，再逐步把資料來源換成後端回傳資料。
+
+畫面層原則上不直接處理 HTTP 請求，而是交給 repository 或 service 統一管理。這樣未來如果要切換本機後端、學校伺服器，或調整 API 格式，會比較不需要大幅修改每個畫面。
+
+## 目前本機 API 原型
+
+目前已先建立 `backend/` 資料夾，使用 Node.js 與 Express 製作本機 API 原型。這個階段還沒有正式連接 MySQL，主要用途是先讓 API 路徑、回傳格式與 Flutter App 需要的資料欄位對齊。
+
+已建立的內容：
+
+- `GET /api/health`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/me`
+- `PUT /api/me`
+- `GET /api/me/preferences`
+- `PUT /api/me/preferences`
+- `GET /api/foods`
+- `GET /api/foods/{foodId}`
+- `GET /api/stores/{storeId}`
+- `GET /api/recommendations`
+- `POST /api/recommendations/{foodId}/feedback`
+- `GET /api/me/favorites`
+- `POST /api/me/favorites/{foodId}`
+- `DELETE /api/me/favorites/{foodId}`
+- `GET /api/me/history`
+- `POST /api/me/history/{foodId}`
+- `POST /api/search-logs`
+
+下一步會把目前 mock data 的資料來源逐步改成 MySQL 查詢，並補上正式會員驗證。

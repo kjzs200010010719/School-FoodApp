@@ -12,6 +12,8 @@
 .swiftpm/
 migrate_working_dir/
 AGENTS.md
+node_modules/
+backend/.env
 
 # IntelliJ related
 *.iml

@@ -22,9 +22,22 @@ flutter test
 flutter run -d emulator-5554
 ```
 
+## 本機後端
+
+```powershell
+cd backend
+npm install
+npm start
+```
+
+目前後端先提供 mock API，端點規劃會對齊 Flutter App 與後續 MySQL schema。
+
+注意：`npm start` 才會讓 `http://localhost:3000` 持續可連線；`npm test` 只是執行測試，測完就會關閉。
+
 ## 後端規劃
 
 - API 規劃：[docs/backend_api_plan.md](docs/backend_api_plan.md)
 - MySQL schema：[database/schema.sql](database/schema.sql)
+- 本機 API 原型：[backend/README.md](backend/README.md)
 
 目前不直接使用學校雲端伺服器。先以本機後端與 MySQL 完成串接測試，再部署到學校伺服器。

@@ -1,0 +1,17 @@
+{
+  "name": "shan-jie-ren-yi-backend",
+  "version": "0.1.0",
+  "description": "Local API prototype for the 膳解人意 Flutter app.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mysql2": "^3.11.5"
+  }
+}
