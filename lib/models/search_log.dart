@@ -11,6 +11,21 @@ class SearchLog {
 
   String get displayTitle => keyword.isEmpty ? '條件搜尋' : keyword;
 
+  String get displaySubtitle {
+    if (filterSummary.isEmpty) {
+      return '未套用篩選條件';
+    }
+
+    return filterSummary;
+  }
+
+  String get searchedAtLabel {
+    final hour = searchedAt.hour.toString().padLeft(2, '0');
+    final minute = searchedAt.minute.toString().padLeft(2, '0');
+
+    return '${searchedAt.month}/${searchedAt.day} $hour:$minute';
+  }
+
   Map<String, Object?> toJson() {
     return {
       'keyword': keyword,

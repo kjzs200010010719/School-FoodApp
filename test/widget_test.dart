@@ -85,6 +85,25 @@ void main() {
     expect(find.text('尚未收藏餐點'), findsOneWidget);
   });
 
+  testWidgets('shows search logs in collection screen', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    UserActivityService.instance.addSearchLog(
+      keyword: '雞',
+      filterSummary: '高蛋白',
+    );
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('收藏').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('搜尋紀錄'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('雞'), findsOneWidget);
+    expect(find.text('高蛋白'), findsOneWidget);
+  });
+
   testWidgets('redirects to login before opening protected features', (
     WidgetTester tester,
   ) async {

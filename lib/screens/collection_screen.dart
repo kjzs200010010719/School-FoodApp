@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/food_item.dart';
+import 'package:my_app/models/search_log.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_card.dart';
@@ -22,7 +23,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2,
+      length: 3,
       initialIndex: widget.initialTabIndex,
       vsync: this,
     );
@@ -60,6 +61,7 @@ class _CollectionScreenState extends State<CollectionScreen>
           tabs: const [
             Tab(text: '收藏'),
             Tab(text: '瀏覽紀錄'),
+            Tab(text: '搜尋紀錄'),
           ],
         ),
       ),
@@ -77,6 +79,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             emptyTitle: '尚無瀏覽紀錄',
             emptyMessage: '點進餐點詳情後，系統會自動留下最近看過的餐點。',
           ),
+          _buildSearchLogList(_activityService.searchLogs),
         ],
       ),
     );
@@ -151,6 +154,51 @@ class _CollectionScreenState extends State<CollectionScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchLogList(List<SearchLog> logs) {
+    if (logs.isEmpty) {
+      return _buildEmptyState('尚無搜尋紀錄', '送出搜尋後，系統會留下最近查過的關鍵字與篩選條件。');
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      itemCount: logs.length,
+      itemBuilder: (context, index) {
+        final log = logs[index];
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: ListTile(
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF5E8),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.search_rounded, color: Color(0xFF4E8D57)),
+            ),
+            title: Text(
+              log.displayTitle,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3A2F),
+              ),
+            ),
+            subtitle: Text(log.displaySubtitle),
+            trailing: Text(
+              log.searchedAtLabel,
+              style: const TextStyle(fontSize: 12, color: Colors.black45),
+            ),
+          ),
+        );
+      },
     );
   }
 
