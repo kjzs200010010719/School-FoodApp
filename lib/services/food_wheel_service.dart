@@ -11,12 +11,17 @@ class FoodWheelService {
   List<FoodItem> getCandidates({
     required List<FoodItem> foods,
     FoodSearchFilters filters = const FoodSearchFilters(),
+    DateTime? now,
   }) {
     if (!_hasActiveFilters(filters)) {
       return const [];
     }
 
-    return searchService.search(foods: foods, filters: filters);
+    final today = now ?? DateTime.now();
+    return searchService
+        .search(foods: foods, filters: filters)
+        .where((food) => food.isOpenOn(today))
+        .toList();
   }
 
   FoodItem? spin({required List<FoodItem> candidates, Random? random}) {

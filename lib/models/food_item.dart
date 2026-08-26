@@ -8,6 +8,7 @@ class FoodItem {
     required this.storeName,
     required this.storeAddress,
     required this.businessHours,
+    required this.businessWeekdays,
     required this.contactPhone,
     required this.price,
     required this.category,
@@ -32,6 +33,7 @@ class FoodItem {
   final String storeName;
   final String storeAddress;
   final String businessHours;
+  final List<int> businessWeekdays;
   final String contactPhone;
   final int price;
   final int? originalPrice;
@@ -50,6 +52,34 @@ class FoodItem {
   final bool isFavorite;
 
   String get priceLabel => 'NT\$ $price';
+
+  String get businessWeekdaysLabel {
+    if (businessWeekdays.length == 7) {
+      return '每日營業';
+    }
+
+    const weekdayLabels = {
+      DateTime.monday: '週一',
+      DateTime.tuesday: '週二',
+      DateTime.wednesday: '週三',
+      DateTime.thursday: '週四',
+      DateTime.friday: '週五',
+      DateTime.saturday: '週六',
+      DateTime.sunday: '週日',
+    };
+
+    final sortedWeekdays = [...businessWeekdays]..sort();
+    return sortedWeekdays
+        .map((weekday) => weekdayLabels[weekday])
+        .whereType<String>()
+        .join('、');
+  }
+
+  String get businessScheduleLabel => '$businessWeekdaysLabel $businessHours';
+
+  bool isOpenOn(DateTime date) {
+    return businessWeekdays.contains(date.weekday);
+  }
 
   String get distanceLabel {
     if (distanceMeters >= 1000) {
@@ -86,6 +116,7 @@ class FoodItem {
     String? storeName,
     String? storeAddress,
     String? businessHours,
+    List<int>? businessWeekdays,
     String? contactPhone,
     int? price,
     int? originalPrice,
@@ -110,6 +141,7 @@ class FoodItem {
       storeName: storeName ?? this.storeName,
       storeAddress: storeAddress ?? this.storeAddress,
       businessHours: businessHours ?? this.businessHours,
+      businessWeekdays: businessWeekdays ?? this.businessWeekdays,
       contactPhone: contactPhone ?? this.contactPhone,
       price: price ?? this.price,
       originalPrice: originalPrice ?? this.originalPrice,

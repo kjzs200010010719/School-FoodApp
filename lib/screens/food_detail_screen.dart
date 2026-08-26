@@ -270,7 +270,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
         children: [
           _buildStoreRow(Icons.storefront_rounded, food.storeName),
           _buildStoreRow(Icons.location_on_rounded, food.storeAddress),
-          _buildStoreRow(Icons.schedule_rounded, food.businessHours),
+          _buildStoreRow(Icons.schedule_rounded, food.businessScheduleLabel),
           _buildStoreRow(Icons.call_rounded, food.contactPhone),
         ],
       ),

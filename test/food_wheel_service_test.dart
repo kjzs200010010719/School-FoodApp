@@ -17,6 +17,7 @@ void main() {
   });
 
   test('gets wheel candidates from search filters before spinning', () {
+    final wednesday = DateTime(2026, 8, 26);
     final candidates = service.getCandidates(
       foods: MockFoodRepository.allFoods,
       filters: const FoodSearchFilters(
@@ -24,12 +25,34 @@ void main() {
         maxPrice: 150,
         maxDistanceMeters: 1000,
       ),
+      now: wednesday,
     );
 
     expect(candidates, isNotEmpty);
+    expect(candidates.every((food) => food.isOpenOn(wednesday)), isTrue);
     expect(candidates.every((food) => food.tags.contains('低脂')), isTrue);
     expect(candidates.every((food) => food.price <= 150), isTrue);
     expect(candidates.every((food) => food.distanceMeters <= 1000), isTrue);
+  });
+
+  test('excludes wheel candidates from stores closed today', () {
+    final wednesday = DateTime(2026, 8, 26);
+    final closedFood = MockFoodRepository.allFoods.first.copyWith(
+      tags: const ['測試標籤', '高蛋白'],
+      businessWeekdays: const [DateTime.thursday],
+    );
+    final openFood = MockFoodRepository.allFoods[1].copyWith(
+      tags: const ['測試標籤', '素食'],
+      businessWeekdays: const [DateTime.wednesday],
+    );
+
+    final candidates = service.getCandidates(
+      foods: [closedFood, openFood],
+      filters: const FoodSearchFilters(tags: {'測試標籤'}),
+      now: wednesday,
+    );
+
+    expect(candidates, [openFood]);
   });
 
   test('spin returns null when there are no candidates', () {

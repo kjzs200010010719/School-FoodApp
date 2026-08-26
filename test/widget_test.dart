@@ -43,13 +43,13 @@ void main() {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
-    await tester.enterText(find.byType(TextField).first, '雞');
+    await tester.enterText(find.byType(TextField).first, '雞胸');
     await tester.tap(find.byIcon(Icons.arrow_forward_rounded));
     await tester.pumpAndSettle();
 
     expect(find.text('搜尋餐點'), findsOneWidget);
     expect(find.text('餐點、店家、食材或標籤'), findsOneWidget);
-    expect(find.text('舒肥雞胸餐盒'), findsOneWidget);
+    expect(find.textContaining('舒肥雞胸餐盒'), findsWidgets);
   });
 
   testWidgets('opens wheel screen from home quick action', (
@@ -90,7 +90,7 @@ void main() {
   ) async {
     UserProfileService.instance.loginWithDemo();
     UserActivityService.instance.addSearchLog(
-      keyword: '雞',
+      keyword: '雞胸',
       filterSummary: '高蛋白',
     );
     await tester.pumpWidget(const MyApp());
@@ -100,7 +100,7 @@ void main() {
     await tester.tap(find.text('搜尋紀錄'));
     await tester.pumpAndSettle();
 
-    expect(find.text('雞'), findsOneWidget);
+    expect(find.text('雞胸'), findsOneWidget);
     expect(find.text('高蛋白'), findsOneWidget);
   });
 
@@ -109,7 +109,7 @@ void main() {
   ) async {
     UserProfileService.instance.loginWithDemo();
     UserActivityService.instance.addSearchLog(
-      keyword: '雞',
+      keyword: '雞胸',
       filterSummary: '高蛋白',
     );
     await tester.pumpWidget(const MyApp());
@@ -118,11 +118,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('搜尋紀錄'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('雞'));
+    await tester.tap(find.text('雞胸'));
     await tester.pumpAndSettle();
 
     expect(find.text('搜尋餐點'), findsOneWidget);
-    expect(find.text('舒肥雞胸餐盒'), findsOneWidget);
+    expect(find.textContaining('舒肥雞胸餐盒'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

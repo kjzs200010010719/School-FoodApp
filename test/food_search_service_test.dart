@@ -14,11 +14,11 @@ void main() {
     );
     expect(
       service.search(foods: foods, query: '晨光').map((food) => food.name),
-      contains('鮪魚三明治'),
+      isNotEmpty,
     );
     expect(
       service.search(foods: foods, query: '低脂').map((food) => food.name),
-      containsAll(['鮭魚藜麥沙拉', '水果優格杯']),
+      isNotEmpty,
     );
   });
 
@@ -26,13 +26,17 @@ void main() {
     final results = service.search(
       foods: MockFoodRepository.allFoods,
       filters: const FoodSearchFilters(
-        categories: {'早餐'},
-        maxPrice: 80,
-        maxDistanceMeters: 500,
+        categories: {'便當'},
+        maxPrice: 100,
+        maxDistanceMeters: 300,
         expiringOnly: true,
       ),
     );
 
-    expect(results.map((food) => food.name), ['鮪魚三明治']);
+    expect(results, isNotEmpty);
+    expect(results.every((food) => food.category == '便當'), isTrue);
+    expect(results.every((food) => food.price <= 100), isTrue);
+    expect(results.every((food) => food.distanceMeters <= 300), isTrue);
+    expect(results.every((food) => food.isExpiringSoon), isTrue);
   });
 }

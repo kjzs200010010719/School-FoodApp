@@ -7,8 +7,11 @@ class RecommendationService {
   List<FoodItem> getRecommendations({
     required List<FoodItem> foods,
     required UserPreference preference,
+    DateTime? now,
   }) {
+    final today = now ?? DateTime.now();
     final candidates = foods.where((food) {
+      final isOpenToday = food.isOpenOn(today);
       final isInBudget =
           food.price >= preference.budgetMin &&
           food.price <= preference.budgetMax;
@@ -17,7 +20,10 @@ class RecommendationService {
         (ingredient) => !food.ingredients.contains(ingredient),
       );
 
-      return isInBudget && isNearby && avoidsRestrictedIngredients;
+      return isOpenToday &&
+          isInBudget &&
+          isNearby &&
+          avoidsRestrictedIngredients;
     }).toList();
 
     candidates.sort((a, b) {
