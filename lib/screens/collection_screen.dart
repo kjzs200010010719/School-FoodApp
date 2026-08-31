@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/food_item.dart';
+import 'package:my_app/models/purchase_record.dart';
 import 'package:my_app/models/search_log.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/search_screen.dart';
@@ -24,7 +25,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 3,
+      length: 4,
       initialIndex: widget.initialTabIndex,
       vsync: this,
     );
@@ -65,13 +66,21 @@ class _CollectionScreenState extends State<CollectionScreen>
         iconTheme: const IconThemeData(color: Color(0xFF2E3A2F)),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: false,
           labelColor: const Color(0xFF4E8D57),
           unselectedLabelColor: Colors.black54,
           indicatorColor: const Color(0xFF4E8D57),
+          labelPadding: EdgeInsets.zero,
+          labelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: const TextStyle(fontSize: 13),
           tabs: const [
             Tab(text: '收藏'),
             Tab(text: '瀏覽紀錄'),
             Tab(text: '搜尋紀錄'),
+            Tab(text: '購買紀錄'),
           ],
         ),
       ),
@@ -90,6 +99,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             emptyMessage: '點進餐點詳情後，系統會自動留下最近看過的餐點。',
           ),
           _buildSearchLogList(_activityService.searchLogs),
+          _buildPurchaseRecordList(_activityService.purchaseRecords),
         ],
       ),
     );
@@ -197,6 +207,90 @@ class _CollectionScreenState extends State<CollectionScreen>
         const SizedBox(height: 12),
         ...logs.map((log) => _buildSearchLogTile(log)),
       ],
+    );
+  }
+
+  Widget _buildPurchaseRecordList(List<PurchaseRecord> records) {
+    if (records.isEmpty) {
+      return _buildEmptyState('尚無購買紀錄', '完成結帳後，系統會將本次購買的餐點與金額留在這裡。');
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        const Text(
+          '購買紀錄',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3A2F),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...records.map(_buildPurchaseRecordTile),
+      ],
+    );
+  }
+
+  Widget _buildPurchaseRecordTile(PurchaseRecord record) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF5E8),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.receipt_long_rounded,
+              color: Color(0xFF4E8D57),
+            ),
+          ),
+          title: Text(
+            '訂單 ${record.purchasedAtLabel}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3A2F),
+            ),
+          ),
+          subtitle: Text(record.summaryLabel),
+          children: record.items
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.food.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        'x${item.quantity}  NT\$ ${item.subtotal}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E3A2F),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ),
     );
   }
 

@@ -181,26 +181,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatTile(
+    return SizedBox(
+      height: 118,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildStatTile(
             icon: Icons.favorite_rounded,
             title: '收藏',
             value: '${_activityService.favorites.length}',
             onTap: () => widget.onOpenCollectionTab?.call(0),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatTile(
+          const SizedBox(width: 12),
+          _buildStatTile(
             icon: Icons.history_rounded,
             title: '瀏覽紀錄',
             value: '${_activityService.history.length}',
             onTap: () => widget.onOpenCollectionTab?.call(1),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          _buildStatTile(
+            icon: Icons.receipt_long_rounded,
+            title: '點餐紀錄',
+            value: '${_activityService.purchaseRecords.length}',
+            onTap: () => widget.onOpenCollectionTab?.call(3),
+          ),
+        ],
+      ),
     );
   }
 
@@ -210,45 +217,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String value,
     VoidCallback? onTap,
   }) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
+    return SizedBox(
+      width: 150,
+      height: 118,
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: const Color(0xFF4E8D57)),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(color: Colors.black54),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: const Color(0xFF4E8D57), size: 22),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    ),
+                    if (onTap != null)
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.black38,
+                        size: 18,
+                      ),
+                  ],
+                ),
+                const Spacer(),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E3A2F),
                     ),
                   ),
-                  if (onTap != null)
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: Colors.black38,
-                      size: 18,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E3A2F),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

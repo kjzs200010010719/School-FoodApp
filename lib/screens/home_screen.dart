@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
+import 'package:my_app/screens/cart_screen.dart';
 import 'package:my_app/screens/collection_screen.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/profile_screen.dart';
@@ -174,6 +175,30 @@ class _HomeScreenState extends State<HomeScreen> {
         _currentIndex = 4;
       });
     }
+  }
+
+  Future<void> _goToCart() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CartScreen(
+          onCheckoutComplete: () {
+            if (mounted) {
+              setState(() {
+                _currentIndex = 0;
+              });
+            }
+          },
+        ),
+      ),
+    );
   }
 
   Future<bool> _ensureLoggedIn() async {
@@ -378,10 +403,44 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        _buildCartButton(),
+      ],
+    );
+  }
+
+  Widget _buildCartButton() {
+    final quantity = _activityService.cartTotalQuantity;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
         IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.notifications_none_rounded),
+          tooltip: '購物車',
+          onPressed: _goToCart,
+          icon: const Icon(Icons.shopping_cart_outlined),
         ),
+        if (quantity > 0)
+          Positioned(
+            right: 4,
+            top: 4,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(99),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                quantity > 99 ? '99+' : '$quantity',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

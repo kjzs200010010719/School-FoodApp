@@ -14,7 +14,7 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(home: FoodDetailScreen(food: food)));
 
-    expect(find.text('餐點詳情'), findsOneWidget);
+    expect(find.text('餐點資訊'), findsOneWidget);
     expect(find.text(food.name), findsOneWidget);
     expect(find.text('推薦原因'), findsOneWidget);
 
@@ -39,6 +39,7 @@ void main() {
     );
 
     expect(find.text('加入收藏'), findsOneWidget);
+    expect(find.text('加入購物車'), findsOneWidget);
 
     await tester.tap(find.text('加入收藏'));
     await tester.pump();
@@ -49,5 +50,29 @@ void main() {
     await tester.pump();
 
     expect(find.text('加入收藏'), findsOneWidget);
+  });
+
+  testWidgets('adds food to cart and opens cart screen', (
+    WidgetTester tester,
+  ) async {
+    final food = MockFoodRepository.allFoods.first;
+
+    await tester.pumpWidget(MaterialApp(home: FoodDetailScreen(food: food)));
+    await tester.scrollUntilVisible(
+      find.text('加入購物車'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    await tester.tap(find.text('加入購物車'));
+    await tester.pump();
+
+    expect(find.text('查看購物車'), findsOneWidget);
+
+    await tester.tap(find.text('查看購物車'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('購物車'), findsOneWidget);
+    expect(find.text(food.name), findsOneWidget);
   });
 }

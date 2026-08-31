@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/food_item.dart';
+import 'package:my_app/screens/cart_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_info_tag.dart';
 
@@ -41,7 +42,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          '餐點詳情',
+          '餐點資訊',
           style: TextStyle(
             color: Color(0xFF2E3A2F),
             fontWeight: FontWeight.bold,
@@ -324,34 +325,81 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
 
   Widget _buildActionButton(BuildContext context) {
     final isFavorite = _activityService.isFavorite(food.id);
+    final isInCart = _activityService.isInCart(food.id);
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          _activityService.toggleFavorite(food);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavorite ? '已將 ${food.name} 移出收藏' : '已將 ${food.name} 加入收藏',
-              ),
-              duration: const Duration(seconds: 1),
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              _activityService.toggleFavorite(food);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavorite
+                        ? '已將 ${food.name} 移出收藏'
+                        : '已將 ${food.name} 加入收藏',
+                  ),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            icon: Icon(
+              isFavorite
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
             ),
-          );
-        },
-        icon: Icon(
-          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        ),
-        label: Text(isFavorite ? '取消收藏' : '加入收藏'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4E8D57),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            label: Text(isFavorite ? '取消收藏' : '加入收藏'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4E8D57),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
           ),
         ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: isInCart ? _goToCart : _addToCart,
+            icon: Icon(
+              isInCart
+                  ? Icons.shopping_cart_checkout_rounded
+                  : Icons.add_shopping_cart_rounded,
+            ),
+            label: Text(isInCart ? '查看購物車' : '加入購物車'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF4E8D57),
+              side: const BorderSide(color: Color(0xFF4E8D57)),
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _addToCart() {
+    _activityService.addToCart(food);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已將 ${food.name} 加入購物車'),
+        duration: const Duration(seconds: 1),
       ),
+    );
+  }
+
+  void _goToCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CartScreen()),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/main.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
@@ -25,16 +26,40 @@ void main() {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
+    final foodFinder = find.text('舒肥雞胸餐盒').first;
     await tester.scrollUntilVisible(
-      find.text('舒肥雞胸餐盒'),
+      foodFinder,
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('舒肥雞胸餐盒'));
+    await tester.tap(foodFinder);
     await tester.pumpAndSettle();
 
-    expect(find.text('餐點詳情'), findsOneWidget);
+    expect(find.text('餐點資訊'), findsOneWidget);
     expect(find.text('推薦原因'), findsOneWidget);
+  });
+
+  testWidgets('opens cart from home and checks out', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    final service = UserActivityService.instance;
+    service.addToCart(MockFoodRepository.allFoods.first);
+
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byIcon(Icons.shopping_cart_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('購物車'), findsOneWidget);
+    expect(find.text('結帳'), findsOneWidget);
+
+    await tester.tap(find.text('結帳'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('膳解人意'), findsOneWidget);
+    expect(service.cartItems, isEmpty);
+    expect(service.purchaseRecords, hasLength(1));
   });
 
   testWidgets('opens search screen after submitting home search', (
@@ -159,6 +184,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('測試使用者'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('飲食偏好'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('飲食偏好'), findsOneWidget);
   });
 
@@ -184,5 +214,29 @@ void main() {
 
     expect(find.text('收藏與紀錄'), findsOneWidget);
     expect(find.text('尚無瀏覽紀錄'), findsOneWidget);
+  });
+
+  testWidgets('opens purchase records from profile order stat', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    final service = UserActivityService.instance;
+    service.addToCart(MockFoodRepository.allFoods.first);
+    service.checkoutCart();
+
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('點餐紀錄'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('點餐紀錄'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('收藏與紀錄'), findsOneWidget);
+    expect(find.text('購買紀錄'), findsWidgets);
   });
 }

@@ -86,4 +86,41 @@ void main() {
 
     expect(service.searchLogs, isEmpty);
   });
+
+  test('adds cart items and updates quantities', () {
+    final food = MockFoodRepository.allFoods.first;
+
+    service.addToCart(food);
+    service.addToCart(food);
+
+    expect(service.isInCart(food.id), isTrue);
+    expect(service.cartQuantity(food.id), 2);
+    expect(service.cartItems, hasLength(1));
+    expect(service.cartTotalQuantity, 2);
+    expect(service.cartTotalPrice, food.price * 2);
+
+    service.decreaseCartItem(food);
+
+    expect(service.cartQuantity(food.id), 1);
+  });
+
+  test('checkout stores purchase record and clears cart', () {
+    final firstFood = MockFoodRepository.allFoods.first;
+    final secondFood = MockFoodRepository.allFoods[1];
+
+    service.addToCart(firstFood);
+    service.addToCart(secondFood);
+    service.addToCart(secondFood);
+
+    final record = service.checkoutCart();
+
+    expect(record, isNotNull);
+    expect(service.cartItems, isEmpty);
+    expect(service.purchaseRecords, hasLength(1));
+    expect(service.purchaseRecords.first.totalQuantity, 3);
+    expect(
+      service.purchaseRecords.first.totalPrice,
+      firstFood.price + secondFood.price * 2,
+    );
+  });
 }
