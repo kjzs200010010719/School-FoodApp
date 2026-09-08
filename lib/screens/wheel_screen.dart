@@ -492,6 +492,8 @@ class _WheelScreenState extends State<WheelScreen>
   }
 
   void _goToFoodDetail(FoodItem food) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),

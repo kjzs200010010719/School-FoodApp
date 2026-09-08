@@ -106,6 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _goToFoodDetail(FoodItem food) async {
+    _dismissKeyboard();
+
     if (!await _ensureLoggedIn()) {
       return;
     }
@@ -120,6 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _goToSearch({String initialQuery = ''}) async {
+    _dismissKeyboard();
+
     if (!await _ensureLoggedIn()) {
       return;
     }
@@ -178,6 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _goToCart() async {
+    _dismissKeyboard();
+
     if (!await _ensureLoggedIn()) {
       return;
     }
@@ -554,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openHomeFilters() {
-    FocusScope.of(context).unfocus();
+    _dismissKeyboard();
 
     showModalBottomSheet<void>(
       context: context,
@@ -899,7 +905,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _submitHomeSearch() {
-    FocusScope.of(context).unfocus();
+    _dismissKeyboard();
     _activityService.addSearchLog(
       keyword: _homeSearchController.text,
       filterSummary: _homeSearchFilters.summaryLabel,
@@ -942,5 +948,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 }

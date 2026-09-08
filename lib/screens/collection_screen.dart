@@ -341,6 +341,8 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   void _goToSearch(SearchLog log) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -350,6 +352,8 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   void _goToFoodDetail(FoodItem food) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),

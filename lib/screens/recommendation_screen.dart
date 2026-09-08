@@ -169,6 +169,8 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   }
 
   void _goToFoodDetail(FoodItem food) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),

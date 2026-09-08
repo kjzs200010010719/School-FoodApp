@@ -397,6 +397,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   }
 
   void _goToCart() {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CartScreen()),
