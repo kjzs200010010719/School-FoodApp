@@ -19,6 +19,21 @@ void main() {
     );
   });
 
+  test('mock foods include nutrition estimates', () {
+    expect(MockFoodRepository.allFoods, hasLength(100));
+    expect(
+      MockFoodRepository.allFoods.every(
+        (food) =>
+            food.calories > 0 &&
+            food.weightGrams > 0 &&
+            food.proteinGrams > 0 &&
+            food.fatGrams > 0 &&
+            food.carbsGrams > 0,
+      ),
+      isTrue,
+    );
+  });
+
   test('toggles favorite foods', () {
     final food = MockFoodRepository.allFoods.first;
 

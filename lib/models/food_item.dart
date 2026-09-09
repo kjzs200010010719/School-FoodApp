@@ -15,6 +15,11 @@ class FoodItem {
     required this.tags,
     required this.ingredients,
     required this.nutritionTags,
+    required this.calories,
+    required this.weightGrams,
+    required this.proteinGrams,
+    required this.fatGrams,
+    required this.carbsGrams,
     required this.distanceMeters,
     required this.stockCount,
     required this.ecoPriorityScore,
@@ -42,6 +47,11 @@ class FoodItem {
   final List<String> tags;
   final List<String> ingredients;
   final List<String> nutritionTags;
+  final int calories;
+  final int weightGrams;
+  final int proteinGrams;
+  final int fatGrams;
+  final int carbsGrams;
   final int distanceMeters;
   final int stockCount;
   final DateTime? expiresAt;
@@ -52,6 +62,16 @@ class FoodItem {
   final bool isFavorite;
 
   String get priceLabel => 'NT\$ $price';
+
+  String get caloriesLabel => '$calories kcal';
+
+  String get weightLabel => '$weightGrams g';
+
+  String get proteinLabel => '$proteinGrams g';
+
+  String get fatLabel => '$fatGrams g';
+
+  String get carbsLabel => '$carbsGrams g';
 
   String get businessWeekdaysLabel {
     if (businessWeekdays.length == 7) {
@@ -125,6 +145,11 @@ class FoodItem {
     List<String>? tags,
     List<String>? ingredients,
     List<String>? nutritionTags,
+    int? calories,
+    int? weightGrams,
+    int? proteinGrams,
+    int? fatGrams,
+    int? carbsGrams,
     int? distanceMeters,
     int? stockCount,
     DateTime? expiresAt,
@@ -150,6 +175,11 @@ class FoodItem {
       tags: tags ?? this.tags,
       ingredients: ingredients ?? this.ingredients,
       nutritionTags: nutritionTags ?? this.nutritionTags,
+      calories: calories ?? this.calories,
+      weightGrams: weightGrams ?? this.weightGrams,
+      proteinGrams: proteinGrams ?? this.proteinGrams,
+      fatGrams: fatGrams ?? this.fatGrams,
+      carbsGrams: carbsGrams ?? this.carbsGrams,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       stockCount: stockCount ?? this.stockCount,
       expiresAt: expiresAt ?? this.expiresAt,

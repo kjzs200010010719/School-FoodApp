@@ -60,6 +60,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             const SizedBox(height: 16),
             _buildInfoGrid(),
             const SizedBox(height: 16),
+            _buildNutritionSection(),
+            const SizedBox(height: 16),
             _buildTagSection('食材資訊', food.ingredients),
             const SizedBox(height: 16),
             _buildTagSection('營養與偏好標籤', food.nutritionTags + food.tags),
@@ -243,6 +245,99 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Color(0xFF2E3A2F),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutritionSection() {
+    return _buildSection(
+      title: '營養估算',
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _buildNutritionTile(
+                  Icons.local_fire_department_rounded,
+                  '熱量',
+                  food.caloriesLabel,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildNutritionTile(
+                  Icons.scale_rounded,
+                  '重量',
+                  food.weightLabel,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildNutritionTile(
+                  Icons.fitness_center_rounded,
+                  '蛋白質',
+                  food.proteinLabel,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildNutritionTile(
+                  Icons.water_drop_rounded,
+                  '脂肪',
+                  food.fatLabel,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildNutritionTile(
+                  Icons.grain_rounded,
+                  '碳水',
+                  food.carbsLabel,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutritionTile(IconData icon, String title, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9F4),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF4E8D57)),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3A2F),
+              ),
             ),
           ),
         ],

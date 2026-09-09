@@ -17,13 +17,35 @@ void main() {
     expect(find.text('餐點資訊'), findsOneWidget);
     expect(find.text(food.name), findsOneWidget);
     expect(find.text('推薦原因'), findsOneWidget);
+    expect(find.text('減廢分數', skipOffstage: false), findsOneWidget);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.scrollUntilVisible(
+      find.text('營養估算'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('營養估算'), findsOneWidget);
+    expect(find.text(food.caloriesLabel), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('食材資訊'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('食材資訊'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('店家資訊'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('店家資訊'), findsOneWidget);
-    expect(find.text('減廢分數'), findsOneWidget);
   });
 
   testWidgets('toggles favorite button label in food detail', (

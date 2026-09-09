@@ -79,6 +79,7 @@ class MockFoodRepository {
     final stockCount = 3 + (index % 12);
     final suffix = _nameSuffixes[batchIndex % _nameSuffixes.length];
     final tags = _tagsWithExpiry(template.tags, isExpiringSoon);
+    final nutrition = _nutritionFor(template.category, index);
 
     return FoodItem(
       id: 'food-${(index + 1).toString().padLeft(3, '0')}',
@@ -96,6 +97,11 @@ class MockFoodRepository {
       tags: tags,
       ingredients: template.ingredients,
       nutritionTags: template.nutritionTags,
+      calories: nutrition.calories,
+      weightGrams: nutrition.weightGrams,
+      proteinGrams: nutrition.proteinGrams,
+      fatGrams: nutrition.fatGrams,
+      carbsGrams: nutrition.carbsGrams,
       distanceMeters: distance,
       stockCount: stockCount,
       expiresAt: null,
@@ -147,6 +153,7 @@ class MockFoodRepository {
     final store = convenienceStores.firstWhere(
       (store) => store.id == template.storeId,
     );
+    final nutrition = _nutritionFor(template.category, index);
 
     return FoodItem(
       id: 'expiring-${(index + 1).toString().padLeft(3, '0')}',
@@ -164,6 +171,11 @@ class MockFoodRepository {
       tags: _tagsWithExpiry(template.tags, true),
       ingredients: template.ingredients,
       nutritionTags: template.nutritionTags,
+      calories: nutrition.calories,
+      weightGrams: nutrition.weightGrams,
+      proteinGrams: nutrition.proteinGrams,
+      fatGrams: nutrition.fatGrams,
+      carbsGrams: nutrition.carbsGrams,
       distanceMeters: store.distanceMeters,
       stockCount: template.stockCount,
       expiresAt: _now.add(Duration(hours: template.expiresInHours)),
@@ -174,6 +186,84 @@ class MockFoodRepository {
       icon: template.icon,
     );
   }
+
+  static _NutritionEstimate _nutritionFor(String category, int index) {
+    final base = switch (category) {
+      '便當' => const _NutritionEstimate(
+        calories: 560,
+        weightGrams: 420,
+        proteinGrams: 31,
+        fatGrams: 17,
+        carbsGrams: 68,
+      ),
+      '麵食' => const _NutritionEstimate(
+        calories: 620,
+        weightGrams: 430,
+        proteinGrams: 27,
+        fatGrams: 19,
+        carbsGrams: 86,
+      ),
+      '飯糰' => const _NutritionEstimate(
+        calories: 230,
+        weightGrams: 115,
+        proteinGrams: 9,
+        fatGrams: 5,
+        carbsGrams: 39,
+      ),
+      '輕食' => const _NutritionEstimate(
+        calories: 330,
+        weightGrams: 280,
+        proteinGrams: 24,
+        fatGrams: 11,
+        carbsGrams: 30,
+      ),
+      '湯品' => const _NutritionEstimate(
+        calories: 260,
+        weightGrams: 360,
+        proteinGrams: 18,
+        fatGrams: 8,
+        carbsGrams: 24,
+      ),
+      '甜點' => const _NutritionEstimate(
+        calories: 280,
+        weightGrams: 150,
+        proteinGrams: 7,
+        fatGrams: 12,
+        carbsGrams: 38,
+      ),
+      _ => const _NutritionEstimate(
+        calories: 420,
+        weightGrams: 300,
+        proteinGrams: 20,
+        fatGrams: 14,
+        carbsGrams: 48,
+      ),
+    };
+
+    return _NutritionEstimate(
+      calories: base.calories + (index % 5) * 12,
+      weightGrams: base.weightGrams + (index % 4) * 15,
+      proteinGrams: base.proteinGrams + (index % 3) * 2,
+      fatGrams: base.fatGrams + (index % 3),
+      carbsGrams: base.carbsGrams + (index % 4) * 4,
+    );
+  }
+}
+
+class _NutritionEstimate {
+  const _NutritionEstimate({
+    required this.calories,
+    required this.weightGrams,
+    required this.proteinGrams,
+    required this.fatGrams,
+    required this.carbsGrams,
+  });
+
+  final int calories;
+  final int weightGrams;
+  final int proteinGrams;
+  final int fatGrams;
+  final int carbsGrams;
 }
 
 class _FoodTemplate {

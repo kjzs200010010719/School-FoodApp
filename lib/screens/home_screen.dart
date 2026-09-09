@@ -320,6 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ProfileScreen(
             onOpenCollectionTab: (tabIndex) =>
                 _goToCollection(initialTabIndex: tabIndex),
+            onLoginComplete: _goToHome,
           ),
         ],
       ),
@@ -994,5 +995,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _dismissKeyboard() {
     FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _goToHome() {
+    if (mounted) {
+      setState(() {
+        _currentIndex = 0;
+      });
+    }
   }
 }

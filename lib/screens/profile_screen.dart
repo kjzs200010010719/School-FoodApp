@@ -5,9 +5,14 @@ import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.onOpenCollectionTab});
+  const ProfileScreen({
+    super.key,
+    this.onOpenCollectionTab,
+    this.onLoginComplete,
+  });
 
   final ValueChanged<int>? onOpenCollectionTab;
+  final VoidCallback? onLoginComplete;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -100,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _profileService.loginWithDemo,
+                  onPressed: _loginWithDemo,
                   icon: const Icon(Icons.login_rounded),
                   label: const Text('測試登入'),
                 ),
@@ -119,6 +124,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildProfileHeader(profile),
         const SizedBox(height: 16),
         _buildStats(),
+        const SizedBox(height: 16),
+        _buildHealthSummarySection(),
         const SizedBox(height: 16),
         _buildPreferenceSection(profile),
         const SizedBox(height: 16),
@@ -268,6 +275,173 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHealthSummarySection() {
+    final summary = _buildTodayHealthSummary();
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF5E8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.monitor_heart_rounded,
+                  color: Color(0xFF4E8D57),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '今日健康摘要',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E3A2F),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '依購買紀錄估算攝取狀態',
+                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (summary.mealCount == 0)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F9F4),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                '尚無今日點餐紀錄，完成結帳後會自動累計熱量與營養素。',
+                style: TextStyle(color: Colors.black54, height: 1.5),
+              ),
+            )
+          else ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: summary.calorieProgress,
+                minHeight: 10,
+                backgroundColor: const Color(0xFFEAF5E8),
+                valueColor: const AlwaysStoppedAnimation(Color(0xFF4E8D57)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildHealthMetric(
+                    '熱量',
+                    '${summary.calories} kcal',
+                    '建議值 ${summary.dailyCalorieTarget} kcal',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildHealthMetric(
+                    '餐點',
+                    '${summary.mealCount} 份',
+                    '${summary.totalWeightGrams} g',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildHealthMetric(
+                    '蛋白質',
+                    '${summary.proteinGrams} g',
+                    '',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildHealthMetric('脂肪', '${summary.fatGrams} g', ''),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildHealthMetric(
+                    '碳水',
+                    '${summary.carbsGrams} g',
+                    '',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHealthMetric(String title, String value, String subtitle) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9F4),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3A2F),
+              ),
+            ),
+          ),
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: Colors.black45),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -510,11 +684,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _loginWithDemo() {
+    _profileService.loginWithDemo();
+    widget.onLoginComplete?.call();
+  }
+
   String _budgetLabel(int? budgetMax) {
     return budgetMax == null ? '不限' : '$budgetMax 元';
   }
 
   String _distanceLabel(int? distanceLimitMeters) {
     return distanceLimitMeters == null ? '不限' : '$distanceLimitMeters 公尺';
+  }
+
+  _HealthSummary _buildTodayHealthSummary() {
+    const dailyCalorieTarget = 1800;
+    final today = DateTime.now();
+    var mealCount = 0;
+    var calories = 0;
+    var totalWeightGrams = 0;
+    var proteinGrams = 0;
+    var fatGrams = 0;
+    var carbsGrams = 0;
+
+    for (final record in _activityService.purchaseRecords) {
+      if (!_isSameDate(record.purchasedAt, today)) {
+        continue;
+      }
+
+      for (final item in record.items) {
+        mealCount += item.quantity;
+        calories += item.food.calories * item.quantity;
+        totalWeightGrams += item.food.weightGrams * item.quantity;
+        proteinGrams += item.food.proteinGrams * item.quantity;
+        fatGrams += item.food.fatGrams * item.quantity;
+        carbsGrams += item.food.carbsGrams * item.quantity;
+      }
+    }
+
+    return _HealthSummary(
+      mealCount: mealCount,
+      calories: calories,
+      totalWeightGrams: totalWeightGrams,
+      proteinGrams: proteinGrams,
+      fatGrams: fatGrams,
+      carbsGrams: carbsGrams,
+      dailyCalorieTarget: dailyCalorieTarget,
+    );
+  }
+
+  bool _isSameDate(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+}
+
+class _HealthSummary {
+  const _HealthSummary({
+    required this.mealCount,
+    required this.calories,
+    required this.totalWeightGrams,
+    required this.proteinGrams,
+    required this.fatGrams,
+    required this.carbsGrams,
+    required this.dailyCalorieTarget,
+  });
+
+  final int mealCount;
+  final int calories;
+  final int totalWeightGrams;
+  final int proteinGrams;
+  final int fatGrams;
+  final int carbsGrams;
+  final int dailyCalorieTarget;
+
+  double get calorieProgress {
+    if (dailyCalorieTarget == 0) {
+      return 0;
+    }
+
+    return (calories / dailyCalorieTarget).clamp(0, 1).toDouble();
   }
 }

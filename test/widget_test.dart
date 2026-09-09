@@ -192,7 +192,7 @@ void main() {
     expect(find.text('測試登入'), findsOneWidget);
   });
 
-  testWidgets('opens profile screen and logs in with demo account', (
+  testWidgets('logs in with demo account and returns home', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const MyApp());
@@ -206,13 +206,9 @@ void main() {
     await tester.tap(find.text('測試登入'));
     await tester.pumpAndSettle();
 
-    expect(find.text('測試使用者'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('飲食偏好'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('飲食偏好'), findsOneWidget);
+    expect(find.text('膳解人意'), findsOneWidget);
+    expect(find.text('今日推薦'), findsOneWidget);
+    expect(UserProfileService.instance.isLoggedIn, isTrue);
   });
 
   testWidgets('opens collection tabs from profile stats', (
@@ -244,13 +240,23 @@ void main() {
   ) async {
     UserProfileService.instance.loginWithDemo();
     final service = UserActivityService.instance;
-    service.addToCart(MockFoodRepository.allFoods.first);
+    final food = MockFoodRepository.allFoods.first;
+    service.addToCart(food);
     service.checkoutCart();
 
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('今日健康摘要'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('今日健康摘要'), findsOneWidget);
+    expect(find.text(food.caloriesLabel), findsOneWidget);
+
     await tester.scrollUntilVisible(
       find.text('點餐紀錄'),
       200,
