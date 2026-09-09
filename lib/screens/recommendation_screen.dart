@@ -146,6 +146,16 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
               _buildRuleChip('減廢 20%'),
             ],
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _openRecommendationRulesSheet,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+            ),
+            icon: const Icon(Icons.rule_rounded, size: 18),
+            label: const Text('查看推薦原則'),
+          ),
         ],
       ),
     );
@@ -295,6 +305,64 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
     }
 
     return matchedTags.join(' / ');
+  }
+
+  void _openRecommendationRulesSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '推薦原則',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E3A2F),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildRuleRow('先排除今日未營業、超出預算或距離的餐點'),
+                _buildRuleRow('偏好標籤符合度佔 40%，例如高蛋白、低脂、清爽'),
+                _buildRuleRow('距離與預算各佔 20%，越接近設定條件分數越高'),
+                _buildRuleRow('減廢分數佔 20%，鼓勵選擇即期或高利用率餐點'),
+                _buildRuleRow('進入詳情、收藏與購買紀錄未來可回饋推薦排序'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRuleRow(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.check_circle_rounded,
+            color: Color(0xFF4E8D57),
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Colors.black87, height: 1.45),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _goToFoodDetail(FoodItem food) {
