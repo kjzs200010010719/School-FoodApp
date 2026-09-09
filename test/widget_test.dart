@@ -34,6 +34,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('搜尋餐點'), findsOneWidget);
+    expect(find.text('排序'), findsOneWidget);
+    expect(find.text('推薦優先'), findsOneWidget);
     final textField = tester.widget<TextField>(find.byType(TextField).first);
     expect(textField.controller?.text, '沙拉');
     expect(find.text('低脂'), findsWidgets);

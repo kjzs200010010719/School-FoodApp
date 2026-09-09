@@ -1,5 +1,25 @@
 import 'package:my_app/models/food_item.dart';
 
+enum FoodSearchSortOption {
+  recommended,
+  nearest,
+  lowestPrice,
+  lowerCalories,
+  highProtein,
+  expiringFirst;
+
+  String get label {
+    return switch (this) {
+      FoodSearchSortOption.recommended => '推薦優先',
+      FoodSearchSortOption.nearest => '距離最近',
+      FoodSearchSortOption.lowestPrice => '價格最低',
+      FoodSearchSortOption.lowerCalories => '熱量較低',
+      FoodSearchSortOption.highProtein => '高蛋白優先',
+      FoodSearchSortOption.expiringFirst => '即期優惠優先',
+    };
+  }
+}
+
 class FoodSearchFilters {
   const FoodSearchFilters({
     this.categories = const {},
@@ -55,6 +75,7 @@ class FoodSearchService {
     required List<FoodItem> foods,
     String query = '',
     FoodSearchFilters filters = const FoodSearchFilters(),
+    FoodSearchSortOption sortOption = FoodSearchSortOption.recommended,
   }) {
     final keyword = query.trim().toLowerCase();
 
@@ -89,16 +110,72 @@ class FoodSearchService {
       return true;
     }).toList();
 
-    results.sort((a, b) {
-      final expiringCompare = b.ecoPriorityScore.compareTo(a.ecoPriorityScore);
-      if (expiringCompare != 0) {
-        return expiringCompare;
-      }
-
-      return a.distanceMeters.compareTo(b.distanceMeters);
-    });
+    results.sort((a, b) => _compareFoods(a, b, sortOption));
 
     return results;
+  }
+
+  int _compareFoods(FoodItem a, FoodItem b, FoodSearchSortOption sortOption) {
+    return switch (sortOption) {
+      FoodSearchSortOption.recommended => _compareRecommended(a, b),
+      FoodSearchSortOption.nearest => a.distanceMeters.compareTo(
+        b.distanceMeters,
+      ),
+      FoodSearchSortOption.lowestPrice => _thenByDistance(
+        a.price.compareTo(b.price),
+        a,
+        b,
+      ),
+      FoodSearchSortOption.lowerCalories => _thenByDistance(
+        a.calories.compareTo(b.calories),
+        a,
+        b,
+      ),
+      FoodSearchSortOption.highProtein => _thenByDistance(
+        b.proteinGrams.compareTo(a.proteinGrams),
+        a,
+        b,
+      ),
+      FoodSearchSortOption.expiringFirst => _thenByDistance(
+        _compareExpiring(a, b),
+        a,
+        b,
+      ),
+    };
+  }
+
+  int _compareRecommended(FoodItem a, FoodItem b) {
+    final ecoCompare = b.ecoPriorityScore.compareTo(a.ecoPriorityScore);
+    if (ecoCompare != 0) {
+      return ecoCompare;
+    }
+
+    return a.distanceMeters.compareTo(b.distanceMeters);
+  }
+
+  int _compareExpiring(FoodItem a, FoodItem b) {
+    final expiringCompare = (b.isExpiringSoon ? 1 : 0).compareTo(
+      a.isExpiringSoon ? 1 : 0,
+    );
+    if (expiringCompare != 0) {
+      return expiringCompare;
+    }
+
+    final expiryA = a.expiresAt;
+    final expiryB = b.expiresAt;
+    if (expiryA != null && expiryB != null) {
+      return expiryA.compareTo(expiryB);
+    }
+
+    return b.ecoPriorityScore.compareTo(a.ecoPriorityScore);
+  }
+
+  int _thenByDistance(int primaryCompare, FoodItem a, FoodItem b) {
+    if (primaryCompare != 0) {
+      return primaryCompare;
+    }
+
+    return a.distanceMeters.compareTo(b.distanceMeters);
   }
 
   bool _matchesKeyword(FoodItem food, String keyword) {

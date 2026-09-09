@@ -39,4 +39,58 @@ void main() {
     expect(results.every((food) => food.distanceMeters <= 300), isTrue);
     expect(results.every((food) => food.isExpiringSoon), isTrue);
   });
+
+  test('sorts search results by distance', () {
+    final results = service.search(
+      foods: MockFoodRepository.allFoods,
+      sortOption: FoodSearchSortOption.nearest,
+    );
+
+    expect(results, isNotEmpty);
+    for (var index = 1; index < results.length; index += 1) {
+      expect(
+        results[index - 1].distanceMeters <= results[index].distanceMeters,
+        isTrue,
+      );
+    }
+  });
+
+  test('sorts search results by lowest price', () {
+    final results = service.search(
+      foods: MockFoodRepository.allFoods,
+      sortOption: FoodSearchSortOption.lowestPrice,
+    );
+
+    expect(results, isNotEmpty);
+    for (var index = 1; index < results.length; index += 1) {
+      expect(results[index - 1].price <= results[index].price, isTrue);
+    }
+  });
+
+  test('sorts search results by calories and protein', () {
+    final lowerCalories = service.search(
+      foods: MockFoodRepository.allFoods,
+      sortOption: FoodSearchSortOption.lowerCalories,
+    );
+    final highProtein = service.search(
+      foods: MockFoodRepository.allFoods,
+      sortOption: FoodSearchSortOption.highProtein,
+    );
+
+    expect(lowerCalories.first.calories <= lowerCalories.last.calories, isTrue);
+    expect(
+      highProtein.first.proteinGrams >= highProtein.last.proteinGrams,
+      isTrue,
+    );
+  });
+
+  test('sorts expiring foods before regular foods', () {
+    final results = service.search(
+      foods: MockFoodRepository.allFoods,
+      sortOption: FoodSearchSortOption.expiringFirst,
+    );
+
+    expect(results, isNotEmpty);
+    expect(results.first.isExpiringSoon, isTrue);
+  });
 }

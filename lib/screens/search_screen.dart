@@ -25,6 +25,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final UserActivityService _activityService = UserActivityService.instance;
   late final TextEditingController _searchController;
   FoodSearchFilters _filters = const FoodSearchFilters();
+  FoodSearchSortOption _sortOption = FoodSearchSortOption.recommended;
   late List<FoodItem> _results;
 
   List<String> get _categories {
@@ -120,9 +121,63 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             _buildRecentSearches(),
             _buildActiveFilters(),
+            _buildSortBar(),
             Expanded(child: _buildResults()),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSortBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Row(
+        children: [
+          const Icon(Icons.sort_rounded, color: Color(0xFF4E8D57), size: 20),
+          const SizedBox(width: 8),
+          const Text(
+            '排序',
+            style: TextStyle(
+              color: Color(0xFF2E3A2F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonFormField<FoodSearchSortOption>(
+              initialValue: _sortOption,
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              items: FoodSearchSortOption.values
+                  .map(
+                    (option) => DropdownMenuItem(
+                      value: option,
+                      child: Text(option.label),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (option) {
+                if (option == null) {
+                  return;
+                }
+
+                _updateSortOption(option);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -440,6 +495,13 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  void _updateSortOption(FoodSearchSortOption sortOption) {
+    setState(() {
+      _sortOption = sortOption;
+      _results = _search();
+    });
+  }
+
   void _toggleCategory(String category) {
     _updateFilters(_filtersWithCategory(_filters, category));
   }
@@ -470,6 +532,7 @@ class _SearchScreenState extends State<SearchScreen> {
       foods: MockFoodRepository.allFoods,
       query: _searchController.text,
       filters: _filters,
+      sortOption: _sortOption,
     );
   }
 
