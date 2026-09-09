@@ -120,6 +120,30 @@ void main() {
     expect(find.text('請先設定轉盤條件，系統會列出符合條件的候選餐點。'), findsOneWidget);
   });
 
+  testWidgets('wheel spins a category before showing food result', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('轉盤決定'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('便當'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('轉出類型'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('轉出類型'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '轉出類型'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('今天吃：便當', skipOffstage: false), findsOneWidget);
+    expect(find.text('便當 候選餐點', skipOffstage: false), findsOneWidget);
+  });
+
   testWidgets('shows recommendation score rules', (WidgetTester tester) async {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());

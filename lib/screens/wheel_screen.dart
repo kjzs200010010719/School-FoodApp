@@ -23,6 +23,7 @@ class _WheelScreenState extends State<WheelScreen>
 
   FoodSearchFilters _filters = const FoodSearchFilters();
   FoodItem? _selectedFood;
+  String? _selectedCategory;
 
   List<FoodItem> get _candidates {
     return _wheelService.getCandidates(
@@ -113,12 +114,12 @@ class _WheelScreenState extends State<WheelScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '先篩選，再決定',
+            '先決定類型，再挑餐點',
             style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 8),
           const Text(
-            '從符合預算、距離與偏好的餐點中抽選',
+            '把選擇障礙縮小成一個餐點類型',
             style: TextStyle(
               color: Colors.white,
               fontSize: 21,
@@ -128,7 +129,7 @@ class _WheelScreenState extends State<WheelScreen>
           ),
           const SizedBox(height: 10),
           Text(
-            '目前候選餐點：$candidateCount 項，請先設定至少一個條件再開始轉盤。',
+            '目前候選餐點：$candidateCount 項，轉盤會先抽出類型，再從該類型挑出一餐。',
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -294,6 +295,10 @@ class _WheelScreenState extends State<WheelScreen>
   }
 
   Widget _buildWheelResult(List<FoodItem> candidates) {
+    final categoryCandidates = _selectedCategory == null
+        ? const <FoodItem>[]
+        : _wheelService.getCandidatesByCategory(candidates, _selectedCategory!);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -320,8 +325,32 @@ class _WheelScreenState extends State<WheelScreen>
             ),
           ),
           const SizedBox(height: 16),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _selectedCategory == null
+                ? const SizedBox.shrink()
+                : Container(
+                    key: ValueKey(_selectedCategory),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE3A3),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '今天吃：$_selectedCategory',
+                      style: const TextStyle(
+                        color: Color(0xFF2F3E30),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+          ),
           Text(
-            _selectedFood == null ? '按下轉盤，幫你選出一餐' : _selectedFood!.name,
+            _selectedFood == null ? '按下轉盤，先幫你選類型' : _selectedFood!.name,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 22,
@@ -332,8 +361,8 @@ class _WheelScreenState extends State<WheelScreen>
           const SizedBox(height: 8),
           Text(
             _selectedFood == null
-                ? '候選餐點會先依你設定的條件篩選，再從符合項目中抽選。'
-                : '${_selectedFood!.storeName} / ${_selectedFood!.priceLabel} / ${_selectedFood!.distanceLabel}',
+                ? '系統會用目前條件排除不符合的餐點，再用類型轉盤縮小選擇範圍。'
+                : '${_selectedFood!.storeName} / ${_selectedFood!.priceLabel} / ${_selectedFood!.distanceLabel}\n同類型候選 ${categoryCandidates.length} 項',
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.black54, height: 1.5),
           ),
@@ -346,7 +375,7 @@ class _WheelScreenState extends State<WheelScreen>
                       ? null
                       : () => _spin(candidates),
                   icon: const Icon(Icons.play_arrow_rounded),
-                  label: const Text('開始轉盤'),
+                  label: const Text('轉出類型'),
                 ),
               ),
               if (_selectedFood != null) ...[
@@ -379,19 +408,26 @@ class _WheelScreenState extends State<WheelScreen>
       );
     }
 
+    final visibleCandidates = _selectedCategory == null
+        ? candidates
+        : _wheelService.getCandidatesByCategory(candidates, _selectedCategory!);
+    final title = _selectedCategory == null
+        ? '候選餐點'
+        : '$_selectedCategory 候選餐點';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '候選餐點',
-          style: TextStyle(
+        Text(
+          title,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Color(0xFF2E3A2F),
           ),
         ),
         const SizedBox(height: 12),
-        ...candidates
+        ...visibleCandidates
             .take(3)
             .map(
               (food) => FoodCard(
@@ -405,9 +441,9 @@ class _WheelScreenState extends State<WheelScreen>
                 onFavoritePressed: () => _activityService.toggleFavorite(food),
               ),
             ),
-        if (candidates.length > 3) ...[
+        if (visibleCandidates.length > 3) ...[
           const SizedBox(height: 4),
-          _buildAllCandidatesDropdown(candidates),
+          _buildAllCandidatesDropdown(visibleCandidates),
         ],
       ],
     );
@@ -461,10 +497,11 @@ class _WheelScreenState extends State<WheelScreen>
   }
 
   void _spin(List<FoodItem> candidates) {
-    final selectedFood = _wheelService.spin(candidates: candidates);
+    final result = _wheelService.spinByCategory(candidates: candidates);
 
     setState(() {
-      _selectedFood = selectedFood;
+      _selectedCategory = result?.category;
+      _selectedFood = result?.food;
     });
 
     _animationController.forward(from: 0);
@@ -474,6 +511,7 @@ class _WheelScreenState extends State<WheelScreen>
     setState(() {
       _filters = filters;
       _selectedFood = null;
+      _selectedCategory = null;
     });
   }
 

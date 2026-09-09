@@ -25,12 +25,44 @@ class FoodWheelService {
   }
 
   FoodItem? spin({required List<FoodItem> candidates, Random? random}) {
-    if (candidates.isEmpty) {
+    return spinByCategory(candidates: candidates, random: random)?.food;
+  }
+
+  WheelSpinResult? spinByCategory({
+    required List<FoodItem> candidates,
+    Random? random,
+  }) {
+    final categories = getCandidateCategories(candidates);
+    if (categories.isEmpty) {
       return null;
     }
 
     final randomSource = random ?? Random();
-    return candidates[randomSource.nextInt(candidates.length)];
+    final category = categories[randomSource.nextInt(categories.length)];
+    final categoryCandidates = getCandidatesByCategory(candidates, category);
+    final food =
+        categoryCandidates[randomSource.nextInt(categoryCandidates.length)];
+
+    return WheelSpinResult(
+      category: category,
+      food: food,
+      categoryCandidates: categoryCandidates,
+    );
+  }
+
+  List<String> getCandidateCategories(List<FoodItem> candidates) {
+    final categories = candidates.map((food) => food.category).toSet().toList()
+      ..sort();
+    return List.unmodifiable(categories);
+  }
+
+  List<FoodItem> getCandidatesByCategory(
+    List<FoodItem> candidates,
+    String category,
+  ) {
+    return List.unmodifiable(
+      candidates.where((food) => food.category == category),
+    );
   }
 
   bool _hasActiveFilters(FoodSearchFilters filters) {
@@ -40,4 +72,16 @@ class FoodWheelService {
         filters.maxDistanceMeters != null ||
         filters.expiringOnly;
   }
+}
+
+class WheelSpinResult {
+  const WheelSpinResult({
+    required this.category,
+    required this.food,
+    required this.categoryCandidates,
+  });
+
+  final String category;
+  final FoodItem food;
+  final List<FoodItem> categoryCandidates;
 }

@@ -74,4 +74,25 @@ void main() {
       expect(candidates, contains(selectedFood));
     },
   );
+
+  test('spin by category picks a category before selecting food', () {
+    final candidates = MockFoodRepository.allFoods
+        .where((food) => food.category == '便當' || food.category == '飯糰')
+        .take(8)
+        .toList();
+
+    final result = service.spinByCategory(
+      candidates: candidates,
+      random: Random(4),
+    );
+
+    expect(result, isNotNull);
+    expect(result!.food.category, result.category);
+    expect(
+      result.categoryCandidates.every(
+        (food) => food.category == result.category,
+      ),
+      isTrue,
+    );
+  });
 }
