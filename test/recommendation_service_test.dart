@@ -10,6 +10,31 @@ void main() {
     expect(MockFoodRepository.allFoods, hasLength(100));
   });
 
+  test('convenience expiring data follows distance limit', () {
+    expect(
+      MockFoodRepository.convenienceStoresByBrand(
+        null,
+        maxDistanceMeters: 1000,
+      ),
+      hasLength(7),
+    );
+    expect(
+      MockFoodRepository.convenienceStoresByBrand(
+        null,
+        maxDistanceMeters: 1500,
+      ),
+      hasLength(9),
+    );
+    expect(
+      MockFoodRepository.expiringFoodsByBrand(null, maxDistanceMeters: 1000),
+      hasLength(20),
+    );
+    expect(
+      MockFoodRepository.expiringFoodsByBrand(null, maxDistanceMeters: 1500),
+      hasLength(26),
+    );
+  });
+
   test('mock foods have two to three preference tags', () {
     expect(
       MockFoodRepository.allFoods.every(

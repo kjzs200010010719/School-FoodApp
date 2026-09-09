@@ -4,6 +4,7 @@ import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
 import 'package:my_app/screens/cart_screen.dart';
 import 'package:my_app/screens/collection_screen.dart';
+import 'package:my_app/screens/expiring_deals_screen.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/screens/profile_screen.dart';
 import 'package:my_app/screens/recommendation_screen.dart';
@@ -23,6 +24,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const int _fallbackExpiringDistanceLimitMeters = 1500;
+
   final UserActivityService _activityService = UserActivityService.instance;
   final UserProfileService _profileService = UserProfileService.instance;
   final RecommendationService _recommendationService =
@@ -32,7 +35,17 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   int _collectionTabIndex = 0;
 
-  final List<FoodItem> expiringFoods = MockFoodRepository.expiringFoods;
+  List<FoodItem> get expiringFoods {
+    return MockFoodRepository.expiringFoodsByBrand(
+      null,
+      maxDistanceMeters: _effectiveExpiringDistanceLimitMeters,
+    );
+  }
+
+  int get _effectiveExpiringDistanceLimitMeters {
+    return _profileService.profile?.distanceLimitMeters ??
+        _fallbackExpiringDistanceLimitMeters;
+  }
 
   @override
   void initState() {
@@ -207,6 +220,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _goToExpiringDeals() async {
+    _dismissKeyboard();
+
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ExpiringDealsScreen()),
+    );
+  }
+
   Future<bool> _ensureLoggedIn() async {
     if (_profileService.isLoggedIn) {
       return true;
@@ -352,17 +381,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              _buildSectionTitle('即期優惠', '優先推薦減少浪費'),
-              const SizedBox(height: 12),
-              ...expiringFoods.map(
-                (food) => FoodCard(
-                  food: food,
-                  variant: FoodCardVariant.expiring,
-                  isFavorite: _activityService.isFavorite(food.id),
-                  onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () => _toggleFavorite(food),
-                ),
+              _buildSectionTitle(
+                '即期優惠',
+                '7-11 / 全家，依距離上限 $_effectiveExpiringDistanceLimitMeters 公尺',
+                onMorePressed: _goToExpiringDeals,
               ),
+              const SizedBox(height: 12),
+              ...expiringFoods
+                  .take(4)
+                  .map(
+                    (food) => FoodCard(
+                      food: food,
+                      variant: FoodCardVariant.expiring,
+                      isFavorite: _activityService.isFavorite(food.id),
+                      onTap: _goToExpiringDeals,
+                      onFavoritePressed: () => _toggleFavorite(food),
+                    ),
+                  ),
               const SizedBox(height: 24),
               _buildDecisionCard(),
             ],
@@ -818,7 +853,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, String subtitle) {
+  Widget _buildSectionTitle(
+    String title,
+    String subtitle, {
+    VoidCallback? onMorePressed,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -840,7 +879,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        TextButton(onPressed: _goToRecommendation, child: const Text('更多')),
+        TextButton(
+          onPressed: onMorePressed ?? _goToRecommendation,
+          child: const Text('更多'),
+        ),
       ],
     );
   }

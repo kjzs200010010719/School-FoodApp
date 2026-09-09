@@ -4,6 +4,7 @@ import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/main.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
+import 'package:my_app/widgets/food_card.dart';
 
 void main() {
   setUp(() {
@@ -26,17 +27,39 @@ void main() {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
-    final foodFinder = find.text('舒肥雞胸餐盒').first;
-    await tester.scrollUntilVisible(
-      foodFinder,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(foodFinder);
+    await tester.tap(find.byType(FoodCard).first);
     await tester.pumpAndSettle();
 
     expect(find.text('餐點資訊'), findsOneWidget);
     expect(find.text('推薦原因'), findsOneWidget);
+  });
+
+  testWidgets('opens convenience expiring store and product list', (
+    WidgetTester tester,
+  ) async {
+    UserProfileService.instance.loginWithDemo();
+    await tester.pumpWidget(const MyApp());
+
+    await tester.scrollUntilVisible(
+      find.text('鮪魚御飯糰'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('鮪魚御飯糰'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('依距離上限 1000 公尺'), findsOneWidget);
+    expect(find.textContaining('模擬位置：桃園銘傳大學'), findsOneWidget);
+    expect(find.text('全家'), findsWidgets);
+    expect(find.text('7-11'), findsWidgets);
+
+    await tester.tap(find.text('全家').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('全家龜山銘美店'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('門市即期商品'), findsOneWidget);
+    expect(find.text('明太子鮭魚飯糰'), findsOneWidget);
   });
 
   testWidgets('opens cart from home and checks out', (
