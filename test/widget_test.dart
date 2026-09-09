@@ -320,6 +320,8 @@ void main() {
     expect(find.text('減廢成就'), findsOneWidget);
     expect(find.text('惜食點數'), findsOneWidget);
     expect(find.text('即期份數'), findsOneWidget);
+    expect(find.text('每日減廢任務'), findsOneWidget);
+    expect(find.text('好友惜食排行榜'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('消費管理'),
@@ -332,7 +334,11 @@ void main() {
     expect(find.text('本月消費'), findsOneWidget);
     expect(find.text('常買類型'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, 900));
+    await tester.scrollUntilVisible(
+      find.text('點餐紀錄'),
+      -200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('點餐紀錄'));

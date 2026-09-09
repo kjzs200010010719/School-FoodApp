@@ -668,7 +668,141 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            _buildEcoMissionList(achievement),
+            const SizedBox(height: 12),
+            _buildEcoLeaderboard(achievement),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEcoMissionList(_EcoAchievement achievement) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '每日減廢任務',
+            style: TextStyle(
+              color: Color(0xFF2E3A2F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildEcoMissionRow('購買 1 份即期優惠', achievement.savedFoodCount > 0),
+          _buildEcoMissionRow('累積 60 點惜食點數', achievement.points >= 60),
+          _buildEcoMissionRow('省下 NT\$ 50 餐費', achievement.savedAmount >= 50),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEcoMissionRow(String title, bool completed) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            completed
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: completed ? const Color(0xFF4E8D57) : Colors.black26,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: completed ? const Color(0xFF2E3A2F) : Colors.black54,
+                fontWeight: completed ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEcoLeaderboard(_EcoAchievement achievement) {
+    final ranking = [
+      const _EcoRank(name: '陳小美', points: 230),
+      const _EcoRank(name: '王小明', points: 155),
+      _EcoRank(name: '你', points: achievement.points),
+      const _EcoRank(name: '林同學', points: 72),
+    ]..sort((a, b) => b.points.compareTo(a.points));
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFE2A7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '好友惜食排行榜',
+            style: TextStyle(
+              color: Color(0xFF2E3A2F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...ranking.take(3).toList().asMap().entries.map((entry) {
+            final rank = entry.key + 1;
+            final item = entry.value;
+            final isMe = item.name == '你';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 13,
+                    backgroundColor: isMe
+                        ? const Color(0xFFD68A00)
+                        : const Color(0xFFEAF5E8),
+                    child: Text(
+                      '$rank',
+                      style: TextStyle(
+                        color: isMe ? Colors.white : const Color(0xFF4E8D57),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: TextStyle(
+                        color: isMe ? const Color(0xFFD68A00) : Colors.black87,
+                        fontWeight: isMe ? FontWeight.bold : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${item.points} 點',
+                    style: const TextStyle(
+                      color: Color(0xFF2E3A2F),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -1426,6 +1560,13 @@ class _EcoAchievement {
 
     return ((points - currentThreshold) / span).clamp(0, 1).toDouble();
   }
+}
+
+class _EcoRank {
+  const _EcoRank({required this.name, required this.points});
+
+  final String name;
+  final int points;
 }
 
 class _SpendingSummary {
