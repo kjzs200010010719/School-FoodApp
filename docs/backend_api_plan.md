@@ -4,14 +4,15 @@
 
 目前我們先完成 Flutter 前端原型，包含首頁推薦、搜尋、轉盤、收藏紀錄與會員中心。因為學校雲端伺服器還沒有正式串接，所以現階段先用 mock data 測試功能流程，確認畫面與資料欄位是否符合初審文件需求。
 
-接下來我們會先在本機建立後端 API 與 MySQL 資料庫，等本機測試穩定後，再把 API 和資料庫部署到學校雲端伺服器。
+接下來會先用本機後端 API 與 mock data 驗證流程，資料庫則先完成 `backend/database/schema.sql` 規劃。正式資料庫建議直接建置在學校雲端伺服器，本機不必先架正式 MySQL；若需要離線除錯，再用同一份 schema 建一個臨時本機資料庫即可。
 
 這份文件主要用來整理後端之後要提供哪些資料給 App。前端目前已經先做出可操作的流程，但資料仍是寫在本機端，因此下一步需要把餐點、會員、收藏、瀏覽紀錄與推薦結果整理成 API，讓系統架構逐漸接近初審文件中規劃的完整版本。
 
 ## 本階段目的
 
 - 先確認 Flutter App 需要哪些資料欄位，避免後端資料表設計後才發現前端不夠用。
-- 先在本機完成 API 與 MySQL 測試，降低一開始就部署到伺服器造成的除錯成本。
+- 先在本機完成 API 與 mock data 測試，降低一開始就依賴伺服器造成的除錯成本。
+- 資料庫以學校雲端 MySQL 為正式環境，避免本機資料庫設定與雲端環境不一致。
 - 讓推薦、搜尋、收藏、瀏覽紀錄這些功能未來可以從 mock data 平順改成資料庫資料。
 - 保留學校雲端伺服器作為展示與正式測試環境，而不是目前開發初期就直接依賴它。
 
@@ -24,13 +25,13 @@
    - 收藏與瀏覽紀錄
 
 2. 本機後端 API
-   - 先使用本機 MySQL
+   - 先使用 mock data 與測試確認 API 格式
    - API 回傳格式對齊 Flutter model
    - App 逐步從 mock repository 改成 API repository
 
 3. 學校雲端伺服器
    - 部署 API
-   - 部署 MySQL 或連接學校提供的資料庫
+   - 依照 `backend/database/schema.sql` 部署 MySQL 或連接學校提供的資料庫
    - App 改用正式伺服器網址
 
 ## API 清單
@@ -108,6 +109,7 @@
   "storeName": "健康餐盒店",
   "storeAddress": "台北市中山區健康路 12 號",
   "businessHours": "10:30-20:30",
+  "businessWeekdays": [1, 2, 3, 4, 5],
   "contactPhone": "02-2500-1200",
   "price": 120,
   "originalPrice": null,
@@ -116,6 +118,12 @@
   "tags": ["高蛋白", "低脂"],
   "ingredients": ["雞胸肉", "糙米", "花椰菜"],
   "nutritionTags": ["高蛋白"],
+  "calories": 560,
+  "weightGrams": 420,
+  "proteinGrams": 38,
+  "fatGrams": 14,
+  "carbsGrams": 62,
+  "imageUrl": "https://example.com/images/food-001.jpg",
   "distanceMeters": 450,
   "stockCount": 8,
   "expiresAt": null,

@@ -1,6 +1,6 @@
 # 膳解人意 Backend
 
-這個資料夾是本機後端 API 原型，先用 mock data 對齊 Flutter App 目前需要的資料格式。之後可依照 `database/schema.sql` 把資料來源改成 MySQL。
+這個資料夾是本機後端 API 原型，先用 mock data 對齊 Flutter App 目前需要的資料格式。正式資料庫建議部署在學校雲端伺服器，本機只保留 API 與測試流程；之後可依照 `database/schema.sql` 把資料來源改成 MySQL。
 
 ## 執行方式
 
@@ -22,11 +22,12 @@ GET http://localhost:3000/api/recommendations
 
 ## 環境變數
 
-複製 `.env.example` 成 `.env`，再填入本機 MySQL 設定。`.env` 不會提交到 Git。
+複製 `.env.example` 成 `.env`，再填入學校雲端 MySQL 或臨時測試資料庫設定。`.env` 不會提交到 Git。
 
 ## 目前狀態
 
 - 已建立 API 路由骨架。
 - 已提供餐點、推薦、收藏、瀏覽紀錄、搜尋紀錄等 mock 回應。
+- 已新增 `database/schema.sql`，可作為學校雲端 MySQL 建表依據。
 - 尚未正式連接 MySQL。
 - 尚未加入正式會員密碼加密與 JWT 驗證。
