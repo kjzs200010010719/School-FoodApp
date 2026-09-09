@@ -152,4 +152,20 @@ void main() {
     expect(service.savedAmount, discountAmount * 2);
     expect(service.ecoPoints, greaterThan(0));
   });
+
+  test('stores food rating feedback by food id', () {
+    final food = MockFoodRepository.allFoods.first;
+
+    service.saveFoodFeedback(
+      food: food,
+      rating: 5,
+      tags: const ['份量剛好', '會再回購'],
+    );
+
+    final feedback = service.feedbackFor(food.id);
+    expect(feedback, isNotNull);
+    expect(feedback!.rating, 5);
+    expect(feedback.tags, ['份量剛好', '會再回購']);
+    expect(service.feedbacks, hasLength(1));
+  });
 }

@@ -15,7 +15,17 @@ class FoodDetailScreen extends StatefulWidget {
 }
 
 class _FoodDetailScreenState extends State<FoodDetailScreen> {
+  static const List<String> _feedbackTags = [
+    '份量剛好',
+    '價格合理',
+    '會再回購',
+    '太油',
+    '不符合偏好',
+  ];
+
   final UserActivityService _activityService = UserActivityService.instance;
+  final Set<String> _selectedFeedbackTags = {};
+  int _selectedRating = 0;
 
   FoodItem get food => widget.food;
 
@@ -23,6 +33,11 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   void initState() {
     super.initState();
     _activityService.addListener(_refresh);
+    final feedback = _activityService.feedbackFor(food.id);
+    if (feedback != null) {
+      _selectedRating = feedback.rating;
+      _selectedFeedbackTags.addAll(feedback.tags);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _activityService.addHistory(food);
     });
@@ -66,6 +81,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             _buildTagSection('食材資訊', food.ingredients),
             const SizedBox(height: 16),
             _buildTagSection('營養與偏好標籤', food.nutritionTags + food.tags),
+            const SizedBox(height: 16),
+            _buildFeedbackSection(),
             const SizedBox(height: 16),
             _buildStoreInfo(),
             const SizedBox(height: 20),
@@ -349,6 +366,104 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     );
   }
 
+  Widget _buildFeedbackSection() {
+    final savedFeedback = _activityService.feedbackFor(food.id);
+
+    return _buildSection(
+      title: '餐後回饋',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: List.generate(5, (index) {
+              final rating = index + 1;
+              final isSelected = rating <= _selectedRating;
+
+              return IconButton(
+                key: ValueKey('feedback-star-$rating'),
+                onPressed: () {
+                  setState(() {
+                    _selectedRating = rating;
+                  });
+                },
+                icon: Icon(
+                  isSelected ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: isSelected ? const Color(0xFFF5A623) : Colors.black26,
+                ),
+                tooltip: '$rating 星',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _feedbackTags.map((tag) {
+              final isSelected = _selectedFeedbackTags.contains(tag);
+
+              return FilterChip(
+                key: ValueKey('feedback-tag-$tag'),
+                label: Text(tag),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selectedFeedbackTags.add(tag);
+                    } else {
+                      _selectedFeedbackTags.remove(tag);
+                    }
+                  });
+                },
+                selectedColor: const Color(0xFFDDEEDB),
+                checkmarkColor: const Color(0xFF4E8D57),
+                side: const BorderSide(color: Color(0xFFC9D8C4)),
+                labelStyle: TextStyle(
+                  color: isSelected
+                      ? const Color(0xFF2F6B3C)
+                      : const Color(0xFF2E3A2F),
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const ValueKey('save-food-feedback'),
+              onPressed: _selectedRating == 0 ? null : _saveFeedback,
+              icon: const Icon(Icons.rate_review_rounded),
+              label: const Text('儲存回饋'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF4E8D57),
+                disabledBackgroundColor: const Color(0xFFE4E9E1),
+                foregroundColor: Colors.white,
+                disabledForegroundColor: Colors.black38,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+          if (savedFeedback != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              '已送出 ${savedFeedback.ratingLabel}回饋：${savedFeedback.tagSummary}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF4E8D57),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildStoreInfo() {
     return _buildSection(
       title: '店家資訊',
@@ -487,6 +602,20 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CartScreen()),
+    );
+  }
+
+  void _saveFeedback() {
+    _activityService.saveFoodFeedback(
+      food: food,
+      rating: _selectedRating,
+      tags: _selectedFeedbackTags.toList(),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已儲存 ${food.name} 的餐點回饋'),
+        duration: const Duration(seconds: 1),
+      ),
     );
   }
 

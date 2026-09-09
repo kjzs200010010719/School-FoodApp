@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/cart_item.dart';
+import 'package:my_app/models/food_feedback.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/purchase_record.dart';
 import 'package:my_app/models/search_log.dart';
@@ -19,6 +20,7 @@ class UserActivityService extends ChangeNotifier {
   static const String _searchLogsKey = 'search_logs';
   static const String _cartItemsKey = 'cart_items';
   static const String _purchaseRecordsKey = 'purchase_records';
+  static const String _foodFeedbackKey = 'food_feedback';
 
   SharedPreferences? _preferences;
   final Map<String, FoodItem> _favorites = {};
@@ -26,6 +28,7 @@ class UserActivityService extends ChangeNotifier {
   final List<SearchLog> _searchLogs = [];
   final Map<String, int> _cartQuantities = {};
   final List<PurchaseRecord> _purchaseRecords = [];
+  final Map<String, FoodFeedback> _foodFeedback = {};
 
   List<FoodItem> get favorites => List.unmodifiable(_favorites.values);
 
@@ -48,6 +51,10 @@ class UserActivityService extends ChangeNotifier {
 
   List<PurchaseRecord> get purchaseRecords {
     return List.unmodifiable(_purchaseRecords);
+  }
+
+  List<FoodFeedback> get feedbacks {
+    return List.unmodifiable(_foodFeedback.values);
   }
 
   int get cartTotalQuantity {
@@ -109,6 +116,10 @@ class UserActivityService extends ChangeNotifier {
     return _cartQuantities[foodId] ?? 0;
   }
 
+  FoodFeedback? feedbackFor(String foodId) {
+    return _foodFeedback[foodId];
+  }
+
   Future<void> initialize() async {
     try {
       _preferences = await SharedPreferences.getInstance();
@@ -122,6 +133,7 @@ class UserActivityService extends ChangeNotifier {
     _restoreSearchLogs();
     _restoreCartItems();
     _restorePurchaseRecords();
+    _restoreFoodFeedback();
   }
 
   void toggleFavorite(FoodItem food) {
@@ -233,6 +245,22 @@ class UserActivityService extends ChangeNotifier {
     return record;
   }
 
+  void saveFoodFeedback({
+    required FoodItem food,
+    required int rating,
+    required List<String> tags,
+  }) {
+    _foodFeedback[food.id] = FoodFeedback(
+      foodId: food.id,
+      rating: rating.clamp(1, 5).toInt(),
+      tags: List.unmodifiable(tags.toSet()),
+      createdAt: DateTime.now(),
+    );
+
+    _persistFoodFeedback();
+    notifyListeners();
+  }
+
   void _restoreFavorites() {
     final favoriteIds = _preferences?.getStringList(_favoriteIdsKey) ?? [];
 
@@ -296,6 +324,29 @@ class UserActivityService extends ChangeNotifier {
       );
   }
 
+  void _restoreFoodFeedback() {
+    final encodedFeedback = _preferences?.getStringList(_foodFeedbackKey) ?? [];
+
+    _foodFeedback.clear();
+    for (final encodedItem in encodedFeedback) {
+      try {
+        final decoded = jsonDecode(encodedItem);
+        if (decoded is! Map<String, dynamic>) {
+          continue;
+        }
+
+        final feedback = FoodFeedback.fromJson(decoded);
+        if (feedback.foodId.isNotEmpty && _findFood(feedback.foodId) != null) {
+          _foodFeedback[feedback.foodId] = feedback;
+        }
+      } on FormatException {
+        continue;
+      } on TypeError {
+        continue;
+      }
+    }
+  }
+
   FoodItem? _findFood(String foodId) {
     for (final food in MockFoodRepository.allFoods) {
       if (food.id == foodId) {
@@ -346,6 +397,17 @@ class UserActivityService extends ChangeNotifier {
       _preferences?.setStringList(
         _purchaseRecordsKey,
         _purchaseRecords.map(_encodePurchaseRecord).toList(),
+      ),
+    );
+  }
+
+  void _persistFoodFeedback() {
+    unawaited(
+      _preferences?.setStringList(
+        _foodFeedbackKey,
+        _foodFeedback.values
+            .map((feedback) => jsonEncode(feedback.toJson()))
+            .toList(),
       ),
     );
   }
@@ -418,11 +480,13 @@ class UserActivityService extends ChangeNotifier {
     _searchLogs.clear();
     _cartQuantities.clear();
     _purchaseRecords.clear();
+    _foodFeedback.clear();
     unawaited(_preferences?.remove(_favoriteIdsKey));
     unawaited(_preferences?.remove(_historyIdsKey));
     unawaited(_preferences?.remove(_searchLogsKey));
     unawaited(_preferences?.remove(_cartItemsKey));
     unawaited(_preferences?.remove(_purchaseRecordsKey));
+    unawaited(_preferences?.remove(_foodFeedbackKey));
     notifyListeners();
   }
 }

@@ -113,4 +113,38 @@ void main() {
     expect(find.text('購物車'), findsOneWidget);
     expect(find.text(food.name), findsOneWidget);
   });
+
+  testWidgets('saves rating feedback in food detail', (
+    WidgetTester tester,
+  ) async {
+    final food = MockFoodRepository.allFoods.first;
+
+    await tester.pumpWidget(MaterialApp(home: FoodDetailScreen(food: food)));
+    await tester.scrollUntilVisible(
+      find.text('餐後回饋'),
+      260,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const ValueKey('feedback-star-4')));
+    await tester.tap(find.byKey(const ValueKey('feedback-star-4')));
+    await tester.pump();
+
+    await tester.ensureVisible(find.byKey(const ValueKey('feedback-tag-份量剛好')));
+    await tester.tap(find.byKey(const ValueKey('feedback-tag-份量剛好')));
+    await tester.pump();
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('save-food-feedback')),
+    );
+    await tester.tap(find.byKey(const ValueKey('save-food-feedback')));
+    await tester.pump();
+
+    final feedback = UserActivityService.instance.feedbackFor(food.id);
+    expect(feedback, isNotNull);
+    expect(feedback!.rating, 4);
+    expect(feedback.tags, contains('份量剛好'));
+    expect(find.textContaining('已儲存'), findsOneWidget);
+  });
 }
