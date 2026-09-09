@@ -129,6 +129,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 16),
         _buildEcoAchievementSection(),
         const SizedBox(height: 16),
+        _buildSpendingAnalysisSection(),
+        const SizedBox(height: 16),
         _buildPreferenceSection(profile),
         const SizedBox(height: 16),
         _buildAccountActions(profile),
@@ -698,6 +700,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildSpendingAnalysisSection() {
+    final summary = _buildMonthlySpendingSummary();
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF5E8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Color(0xFF4E8D57),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '消費管理',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E3A2F),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '依本月購買紀錄分析消費習慣',
+                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (summary.orderCount == 0)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F9F4),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                '本月尚無購買紀錄，完成結帳後會開始分析消費金額與常買類型。',
+                style: TextStyle(color: Colors.black54, height: 1.5),
+              ),
+            )
+          else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF5E8),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      '本月消費',
+                      style: TextStyle(
+                        color: Color(0xFF2E3A2F),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'NT\$ ${summary.totalAmount}',
+                    style: const TextStyle(
+                      color: Color(0xFF2E3A2F),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSpendingMetric(
+                    '購買次數',
+                    '${summary.orderCount} 筆',
+                    Icons.receipt_long_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildSpendingMetric(
+                    '餐點份數',
+                    '${summary.totalQuantity} 份',
+                    Icons.restaurant_menu_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSpendingMetric(
+                    '平均每筆',
+                    'NT\$ ${summary.averageOrderAmount}',
+                    Icons.trending_up_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildSpendingMetric(
+                    '常買類型',
+                    summary.topCategory,
+                    Icons.category_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _buildSpendingMetric(
+              '即期優惠省下',
+              'NT\$ ${summary.savedAmount}',
+              Icons.savings_rounded,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpendingMetric(String title, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9F4),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF4E8D57), size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3A2F),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPreferenceSection(UserProfile profile) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1051,6 +1234,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  _SpendingSummary _buildMonthlySpendingSummary() {
+    final now = DateTime.now();
+    final categoryCounts = <String, int>{};
+    var orderCount = 0;
+    var totalQuantity = 0;
+    var totalAmount = 0;
+    var savedAmount = 0;
+
+    for (final record in _activityService.purchaseRecords) {
+      if (!_isSameMonth(record.purchasedAt, now)) {
+        continue;
+      }
+
+      orderCount += 1;
+      totalQuantity += record.totalQuantity;
+      totalAmount += record.totalPrice;
+
+      for (final item in record.items) {
+        categoryCounts.update(
+          item.food.category,
+          (count) => count + item.quantity,
+          ifAbsent: () => item.quantity,
+        );
+
+        final originalPrice = item.food.originalPrice;
+        if (item.food.isExpiringSoon && originalPrice != null) {
+          savedAmount += (originalPrice - item.food.price) * item.quantity;
+        }
+      }
+    }
+
+    final topCategory = categoryCounts.entries.isEmpty
+        ? '尚無資料'
+        : (categoryCounts.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value)))
+              .first
+              .key;
+
+    return _SpendingSummary(
+      orderCount: orderCount,
+      totalQuantity: totalQuantity,
+      totalAmount: totalAmount,
+      savedAmount: savedAmount,
+      topCategory: topCategory,
+    );
+  }
+
+  bool _isSameMonth(DateTime first, DateTime second) {
+    return first.year == second.year && first.month == second.month;
+  }
+
   double _parsePositiveDouble(String text, double fallback) {
     final value = double.tryParse(text.trim());
     if (value == null || value <= 0) {
@@ -1174,5 +1408,29 @@ class _EcoAchievement {
     }
 
     return ((points - currentThreshold) / span).clamp(0, 1).toDouble();
+  }
+}
+
+class _SpendingSummary {
+  const _SpendingSummary({
+    required this.orderCount,
+    required this.totalQuantity,
+    required this.totalAmount,
+    required this.savedAmount,
+    required this.topCategory,
+  });
+
+  final int orderCount;
+  final int totalQuantity;
+  final int totalAmount;
+  final int savedAmount;
+  final String topCategory;
+
+  int get averageOrderAmount {
+    if (orderCount == 0) {
+      return 0;
+    }
+
+    return (totalAmount / orderCount).round();
   }
 }
