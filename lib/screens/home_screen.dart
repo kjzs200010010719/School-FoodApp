@@ -1091,10 +1091,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _updateHomeFilters(_homeFiltersWithTag(_homeSearchFilters, tag));
   }
 
-  void _applyMoodQuickFilter(_MoodQuickFilter option) {
+  Future<void> _applyMoodQuickFilter(_MoodQuickFilter option) async {
     _dismissKeyboard();
     _homeSearchController.text = option.query;
     _updateHomeFilters(option.filters);
+    await _goToSearch(initialQuery: option.query);
   }
 
   FoodSearchFilters _homeFiltersWithCategory(

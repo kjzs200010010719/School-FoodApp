@@ -24,14 +24,16 @@ void main() {
     expect(find.text('今天想吃哪種感覺？'), findsOneWidget);
   });
 
-  testWidgets('applies mood quick filters from home', (
+  testWidgets('opens search with mood quick filters from home', (
     WidgetTester tester,
   ) async {
+    UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.byKey(const ValueKey('mood-filter-清爽')));
     await tester.pumpAndSettle();
 
+    expect(find.text('搜尋餐點'), findsOneWidget);
     final textField = tester.widget<TextField>(find.byType(TextField).first);
     expect(textField.controller?.text, '沙拉');
     expect(find.text('低脂'), findsWidgets);
