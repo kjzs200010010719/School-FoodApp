@@ -110,6 +110,7 @@ class MockFoodRepository {
       recommendationReason: _buildReason(tags, price, distance, isExpiringSoon),
       imageUrl: _imageUrlFor(template.category, index),
       icon: template.icon,
+      specialLabel: _specialLabelFor(index),
     );
   }
 
@@ -186,7 +187,17 @@ class MockFoodRepository {
           '${store.brandLabel} ${store.name} 即期品，${template.discountLabel} 並剩餘 ${template.stockCount} 份',
       imageUrl: _imageUrlFor(template.category, index + 200),
       icon: template.icon,
+      specialLabel: '即期惜食',
     );
+  }
+
+  static String? _specialLabelFor(int index) {
+    return switch (index % 12) {
+      0 || 4 => '今日特餐',
+      7 => '隱藏版',
+      10 => '人氣回購',
+      _ => null,
+    };
   }
 
   static String _imageUrlFor(String category, int index) {

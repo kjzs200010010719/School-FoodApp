@@ -34,6 +34,15 @@ void main() {
     );
   });
 
+  test('mock foods include store recommendation labels', () {
+    final labels = MockFoodRepository.allFoods
+        .map((food) => food.specialLabel)
+        .whereType<String>()
+        .toSet();
+
+    expect(labels, containsAll(['今日特餐', '隱藏版', '人氣回購', '即期惜食']));
+  });
+
   test('toggles favorite foods', () {
     final food = MockFoodRepository.allFoods.first;
 

@@ -143,6 +143,8 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
             runSpacing: 8,
             children: [
               FoodInfoTag(text: food.category),
+              if (food.specialLabel != null)
+                FoodInfoTag(text: food.specialLabel!, warning: true),
               FoodInfoTag(text: food.priceLabel),
               if (food.discountLabel != null)
                 FoodInfoTag(text: food.discountLabel!, warning: true),

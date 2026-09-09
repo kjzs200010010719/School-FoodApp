@@ -107,6 +107,8 @@ class FoodCard extends StatelessWidget {
     if (_isExpiring) {
       return [
         ...tagWidgets,
+        if (food.specialLabel != null)
+          FoodInfoTag(text: food.specialLabel!, warning: true),
         if (food.discountLabel != null)
           FoodInfoTag(text: food.discountLabel!, warning: true),
         FoodInfoTag(text: food.timeLeftLabel, warning: true),
@@ -115,6 +117,8 @@ class FoodCard extends StatelessWidget {
     }
 
     return [
+      if (food.specialLabel != null)
+        FoodInfoTag(text: food.specialLabel!, warning: true),
       ...tagWidgets,
       FoodInfoTag(text: food.priceLabel),
       if (showDistance) FoodInfoTag(text: food.distanceLabel),

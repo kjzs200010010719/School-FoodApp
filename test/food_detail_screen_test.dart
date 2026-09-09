@@ -18,6 +18,7 @@ void main() {
     expect(find.text('餐點資訊'), findsOneWidget);
     expect(find.text(food.name), findsOneWidget);
     expect(find.byType(FoodPhoto), findsOneWidget);
+    expect(find.text('今日特餐'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('推薦原因'),

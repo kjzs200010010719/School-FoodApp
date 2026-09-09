@@ -26,6 +26,7 @@ class FoodItem {
     required this.recommendationReason,
     required this.imageUrl,
     required this.icon,
+    this.specialLabel,
     this.originalPrice,
     this.discountLabel,
     this.expiresAt,
@@ -61,6 +62,7 @@ class FoodItem {
   final String recommendationReason;
   final String imageUrl;
   final IconData icon;
+  final String? specialLabel;
   final bool isFavorite;
 
   String get priceLabel => 'NT\$ $price';
@@ -160,6 +162,7 @@ class FoodItem {
     String? recommendationReason,
     String? imageUrl,
     IconData? icon,
+    String? specialLabel,
     bool? isFavorite,
   }) {
     return FoodItem(
@@ -191,6 +194,7 @@ class FoodItem {
       recommendationReason: recommendationReason ?? this.recommendationReason,
       imageUrl: imageUrl ?? this.imageUrl,
       icon: icon ?? this.icon,
+      specialLabel: specialLabel ?? this.specialLabel,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
