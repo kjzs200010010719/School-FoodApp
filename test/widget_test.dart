@@ -120,6 +120,19 @@ void main() {
     expect(find.text('請先設定轉盤條件，系統會列出符合條件的候選餐點。'), findsOneWidget);
   });
 
+  testWidgets('shows recommendation score rules', (WidgetTester tester) async {
+    UserProfileService.instance.loginWithDemo();
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('查看推薦'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('推薦餐點'), findsOneWidget);
+    expect(find.text('偏好 40%'), findsOneWidget);
+    expect(find.text('距離 20%'), findsOneWidget);
+    expect(find.textContaining('推薦分數'), findsWidgets);
+  });
+
   testWidgets('opens collection screen from bottom navigation', (
     WidgetTester tester,
   ) async {

@@ -109,6 +109,18 @@ void main() {
     },
   );
 
+  test('score breakdown explains recommendation factors', () {
+    const service = RecommendationService();
+    final food = MockFoodRepository.allFoods.first;
+    final score = service.scoreFood(food, UserPreference.defaultPreference);
+
+    expect(score.totalPercent, inInclusiveRange(0, 100));
+    expect(score.preferencePercent, inInclusiveRange(0, 100));
+    expect(score.distancePercent, inInclusiveRange(0, 100));
+    expect(score.budgetPercent, inInclusiveRange(0, 100));
+    expect(score.ecoPercent, inInclusiveRange(0, 100));
+  });
+
   test('recommendations exclude foods closed on the selected date', () {
     const service = RecommendationService();
     final closedFood = MockFoodRepository.allFoods.first.copyWith(

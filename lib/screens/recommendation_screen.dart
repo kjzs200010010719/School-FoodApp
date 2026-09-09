@@ -41,6 +41,8 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final preference = _currentPreference;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
       appBar: widget.showAppBar
@@ -67,13 +69,24 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
               itemCount: recommendedFoods.length,
               itemBuilder: (context, index) {
                 final food = recommendedFoods[index];
-                return FoodCard(
-                  food: food,
-                  showDistance: true,
-                  isFavorite: _activityService.isFavorite(food.id),
-                  onTap: () => _goToFoodDetail(food),
-                  onFavoritePressed: () =>
-                      _activityService.toggleFavorite(food),
+                final score = _recommendationService.scoreFood(
+                  food,
+                  preference,
+                );
+
+                return Column(
+                  children: [
+                    FoodCard(
+                      food: food,
+                      showDistance: true,
+                      isFavorite: _activityService.isFavorite(food.id),
+                      onTap: () => _goToFoodDetail(food),
+                      onFavoritePressed: () =>
+                          _activityService.toggleFavorite(food),
+                    ),
+                    _buildScoreBreakdown(food, score),
+                    const SizedBox(height: 14),
+                  ],
                 );
               },
             ),
@@ -122,7 +135,110 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
               height: 1.5,
             ),
           ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildRuleChip('偏好 40%'),
+              _buildRuleChip('距離 20%'),
+              _buildRuleChip('預算 20%'),
+              _buildRuleChip('減廢 20%'),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRuleChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreBreakdown(
+    FoodItem food,
+    RecommendationScoreBreakdown score,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5EDE2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.analytics_rounded,
+                size: 18,
+                color: Color(0xFF4E8D57),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '推薦分數 ${score.totalPercent} 分',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E3A2F),
+                  ),
+                ),
+              ),
+              Text(
+                _matchedTagsText(food),
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildScoreChip('偏好', score.preferencePercent),
+              _buildScoreChip('距離', score.distancePercent),
+              _buildScoreChip('預算', score.budgetPercent),
+              _buildScoreChip('減廢', score.ecoPercent),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreChip(String title, int percent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF5E8),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$title $percent%',
+        style: const TextStyle(
+          color: Color(0xFF4E8D57),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -166,6 +282,19 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         : '距離 ${profile!.distanceLimitMeters} 公尺內';
 
     return '推薦依據：$tags / $budget / $distance';
+  }
+
+  String _matchedTagsText(FoodItem food) {
+    final matchedTags = food.tags
+        .where((tag) => _currentPreference.preferredTags.contains(tag))
+        .take(2)
+        .toList();
+
+    if (matchedTags.isEmpty) {
+      return '探索餐點';
+    }
+
+    return matchedTags.join(' / ');
   }
 
   void _goToFoodDetail(FoodItem food) {

@@ -27,15 +27,18 @@ class RecommendationService {
     }).toList();
 
     candidates.sort((a, b) {
-      final bScore = _scoreFood(b, preference);
-      final aScore = _scoreFood(a, preference);
+      final bScore = scoreFood(b, preference).totalScore;
+      final aScore = scoreFood(a, preference).totalScore;
       return bScore.compareTo(aScore);
     });
 
     return candidates;
   }
 
-  double _scoreFood(FoodItem food, UserPreference preference) {
+  RecommendationScoreBreakdown scoreFood(
+    FoodItem food,
+    UserPreference preference,
+  ) {
     final tagMatches = food.tags
         .where((tag) => preference.preferredTags.contains(tag))
         .length;
@@ -49,10 +52,48 @@ class RecommendationService {
     final ecoScore = preference.wasteReductionEnabled
         ? food.ecoPriorityScore
         : 0;
-
-    return preferenceScore * 0.4 +
+    final totalScore =
+        preferenceScore * 0.4 +
         distanceScore.clamp(0, 1) * 0.2 +
         budgetScore.clamp(0, 1) * 0.2 +
         ecoScore * 0.2;
+
+    return RecommendationScoreBreakdown(
+      preferenceScore: preferenceScore.clamp(0, 1).toDouble(),
+      distanceScore: distanceScore.clamp(0, 1).toDouble(),
+      budgetScore: budgetScore.clamp(0, 1).toDouble(),
+      ecoScore: ecoScore.clamp(0, 1).toDouble(),
+      totalScore: totalScore.clamp(0, 1).toDouble(),
+    );
+  }
+}
+
+class RecommendationScoreBreakdown {
+  const RecommendationScoreBreakdown({
+    required this.preferenceScore,
+    required this.distanceScore,
+    required this.budgetScore,
+    required this.ecoScore,
+    required this.totalScore,
+  });
+
+  final double preferenceScore;
+  final double distanceScore;
+  final double budgetScore;
+  final double ecoScore;
+  final double totalScore;
+
+  int get preferencePercent => _toPercent(preferenceScore);
+
+  int get distancePercent => _toPercent(distanceScore);
+
+  int get budgetPercent => _toPercent(budgetScore);
+
+  int get ecoPercent => _toPercent(ecoScore);
+
+  int get totalPercent => _toPercent(totalScore);
+
+  static int _toPercent(double value) {
+    return (value * 100).round().clamp(0, 100);
   }
 }
