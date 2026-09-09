@@ -240,7 +240,7 @@ void main() {
   ) async {
     UserProfileService.instance.loginWithDemo();
     final service = UserActivityService.instance;
-    final food = MockFoodRepository.allFoods.first;
+    final food = MockFoodRepository.expiringFoods.first;
     service.addToCart(food);
     service.checkoutCart();
 
@@ -258,10 +258,19 @@ void main() {
     expect(find.text(food.caloriesLabel), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('點餐紀錄'),
+      find.text('減廢成就'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.pumpAndSettle();
+
+    expect(find.text('減廢成就'), findsOneWidget);
+    expect(find.text('惜食點數'), findsOneWidget);
+    expect(find.text('即期份數'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, 900));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('點餐紀錄'));
     await tester.pumpAndSettle();
 

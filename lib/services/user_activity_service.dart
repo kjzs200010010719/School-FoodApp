@@ -58,6 +58,45 @@ class UserActivityService extends ChangeNotifier {
     return cartItems.fold(0, (sum, item) => sum + item.subtotal);
   }
 
+  int get ecoPoints {
+    return purchaseRecords.fold(
+      0,
+      (sum, record) =>
+          sum +
+          record.items.fold(
+            0,
+            (itemSum, item) => itemSum + _ecoPointsForCartItem(item),
+          ),
+    );
+  }
+
+  int get savedFoodCount {
+    return purchaseRecords.fold(
+      0,
+      (sum, record) =>
+          sum +
+          record.items
+              .where((item) => item.food.isExpiringSoon)
+              .fold(0, (itemSum, item) => itemSum + item.quantity),
+    );
+  }
+
+  int get savedAmount {
+    return purchaseRecords.fold(
+      0,
+      (sum, record) =>
+          sum +
+          record.items.fold(0, (itemSum, item) {
+            final originalPrice = item.food.originalPrice;
+            if (!item.food.isExpiringSoon || originalPrice == null) {
+              return itemSum;
+            }
+
+            return itemSum + (originalPrice - item.food.price) * item.quantity;
+          }),
+    );
+  }
+
   bool isFavorite(String foodId) {
     return _favorites.containsKey(foodId);
   }
@@ -309,6 +348,12 @@ class UserActivityService extends ChangeNotifier {
         _purchaseRecords.map(_encodePurchaseRecord).toList(),
       ),
     );
+  }
+
+  int _ecoPointsForCartItem(CartItem item) {
+    final basePoints = (item.food.ecoPriorityScore * 10).round();
+    final expiringBonus = item.food.isExpiringSoon ? 8 : 2;
+    return (basePoints + expiringBonus) * item.quantity;
   }
 
   String _encodePurchaseRecord(PurchaseRecord record) {

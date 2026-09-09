@@ -138,4 +138,18 @@ void main() {
       firstFood.price + secondFood.price * 2,
     );
   });
+
+  test('checkout expiring foods accumulates eco achievements', () {
+    final expiringFood = MockFoodRepository.expiringFoods.first;
+    final discountAmount =
+        (expiringFood.originalPrice ?? expiringFood.price) - expiringFood.price;
+
+    service.addToCart(expiringFood);
+    service.addToCart(expiringFood);
+    service.checkoutCart();
+
+    expect(service.savedFoodCount, 2);
+    expect(service.savedAmount, discountAmount * 2);
+    expect(service.ecoPoints, greaterThan(0));
+  });
 }

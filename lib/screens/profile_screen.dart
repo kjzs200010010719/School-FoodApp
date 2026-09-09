@@ -127,6 +127,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 16),
         _buildHealthSummarySection(),
         const SizedBox(height: 16),
+        _buildEcoAchievementSection(),
+        const SizedBox(height: 16),
         _buildPreferenceSection(profile),
         const SizedBox(height: 16),
         _buildAccountActions(profile),
@@ -446,6 +448,179 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildEcoAchievementSection() {
+    final achievement = _buildEcoAchievement();
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1CC),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: Color(0xFFD68A00),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '減廢成就',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E3A2F),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '結帳後累積惜食點數與等級',
+                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (achievement.points == 0)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F9F4),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                '尚未累積惜食點數，購買即期優惠或高減廢餐點後會自動更新。',
+                style: TextStyle(color: Colors.black54, height: 1.5),
+              ),
+            )
+          else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E8),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    achievement.levelLabel,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E3A2F),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    achievement.nextLevelHint,
+                    style: const TextStyle(color: Color(0xFFD68A00)),
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: achievement.progress,
+                      minHeight: 10,
+                      backgroundColor: const Color(0xFFFFE2A7),
+                      valueColor: const AlwaysStoppedAnimation(
+                        Color(0xFFD68A00),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildEcoMetric(
+                    '惜食點數',
+                    '${achievement.points}',
+                    Icons.stars_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildEcoMetric(
+                    '即期份數',
+                    '${achievement.savedFoodCount} 份',
+                    Icons.inventory_2_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildEcoMetric(
+                    '省下金額',
+                    'NT\$ ${achievement.savedAmount}',
+                    Icons.savings_rounded,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEcoMetric(String title, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9F4),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFFD68A00), size: 18),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3A2F),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPreferenceSection(UserProfile profile) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -738,6 +913,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         first.month == second.month &&
         first.day == second.day;
   }
+
+  _EcoAchievement _buildEcoAchievement() {
+    return _EcoAchievement(
+      points: _activityService.ecoPoints,
+      savedFoodCount: _activityService.savedFoodCount,
+      savedAmount: _activityService.savedAmount,
+    );
+  }
 }
 
 class _HealthSummary {
@@ -765,5 +948,85 @@ class _HealthSummary {
     }
 
     return (calories / dailyCalorieTarget).clamp(0, 1).toDouble();
+  }
+}
+
+class _EcoAchievement {
+  const _EcoAchievement({
+    required this.points,
+    required this.savedFoodCount,
+    required this.savedAmount,
+  });
+
+  final int points;
+  final int savedFoodCount;
+  final int savedAmount;
+
+  int get level {
+    if (points >= 400) {
+      return 4;
+    }
+
+    if (points >= 180) {
+      return 3;
+    }
+
+    if (points >= 60) {
+      return 2;
+    }
+
+    return 1;
+  }
+
+  String get levelName {
+    return switch (level) {
+      4 => '永續選餐家',
+      3 => '減廢達人',
+      2 => '惜食行動者',
+      _ => '食光新手',
+    };
+  }
+
+  String get levelLabel => 'Lv.$level $levelName';
+
+  int get currentThreshold {
+    return switch (level) {
+      4 => 400,
+      3 => 180,
+      2 => 60,
+      _ => 0,
+    };
+  }
+
+  int? get nextThreshold {
+    return switch (level) {
+      1 => 60,
+      2 => 180,
+      3 => 400,
+      _ => null,
+    };
+  }
+
+  String get nextLevelHint {
+    final next = nextThreshold;
+    if (next == null) {
+      return '已達目前最高等級，持續累積惜食成果';
+    }
+
+    return '距離下一級還差 ${next - points} 點';
+  }
+
+  double get progress {
+    final next = nextThreshold;
+    if (next == null) {
+      return 1;
+    }
+
+    final span = next - currentThreshold;
+    if (span <= 0) {
+      return 1;
+    }
+
+    return ((points - currentThreshold) / span).clamp(0, 1).toDouble();
   }
 }
