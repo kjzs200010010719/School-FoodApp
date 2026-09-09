@@ -21,6 +21,21 @@ void main() {
     expect(find.text('今日推薦'), findsOneWidget);
     expect(find.text('即期優惠'), findsWidgets);
     expect(find.text('查看推薦'), findsOneWidget);
+    expect(find.text('今天想吃哪種感覺？'), findsOneWidget);
+  });
+
+  testWidgets('applies mood quick filters from home', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.byKey(const ValueKey('mood-filter-清爽')));
+    await tester.pumpAndSettle();
+
+    final textField = tester.widget<TextField>(find.byType(TextField).first);
+    expect(textField.controller?.text, '沙拉');
+    expect(find.text('低脂'), findsWidgets);
+    expect(find.text('180 元內'), findsOneWidget);
   });
 
   testWidgets('opens food detail from home recommendation card', (
@@ -29,6 +44,11 @@ void main() {
     UserProfileService.instance.loginWithDemo();
     await tester.pumpWidget(const MyApp());
 
+    await tester.scrollUntilVisible(
+      find.byType(FoodCard).first,
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.byType(FoodCard).first);
     await tester.pumpAndSettle();
 

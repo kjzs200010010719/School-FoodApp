@@ -25,6 +25,48 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const int _fallbackExpiringDistanceLimitMeters = 1500;
+  static const List<_MoodQuickFilter> _moodQuickFilters = [
+    _MoodQuickFilter(
+      label: '清爽',
+      description: '低脂輕食',
+      icon: Icons.spa_rounded,
+      query: '沙拉',
+      filters: FoodSearchFilters(
+        categories: {'沙拉', '輕食'},
+        tags: {'低脂', '清爽'},
+        maxPrice: 180,
+      ),
+    ),
+    _MoodQuickFilter(
+      label: '飽足',
+      description: '便當主食',
+      icon: Icons.lunch_dining,
+      query: '便當',
+      filters: FoodSearchFilters(
+        categories: {'便當', '韓式'},
+        tags: {'高蛋白', '均衡'},
+        maxPrice: 220,
+      ),
+    ),
+    _MoodQuickFilter(
+      label: '小確幸',
+      description: '甜點點心',
+      icon: Icons.cake_rounded,
+      query: '甜點',
+      filters: FoodSearchFilters(
+        categories: {'甜點'},
+        tags: {'甜點', '清爽'},
+        maxPrice: 160,
+      ),
+    ),
+    _MoodQuickFilter(
+      label: '快速',
+      description: '近距離',
+      icon: Icons.directions_walk_rounded,
+      query: '',
+      filters: FoodSearchFilters(maxDistanceMeters: 800),
+    ),
+  ];
 
   final UserActivityService _activityService = UserActivityService.instance;
   final UserProfileService _profileService = UserProfileService.instance;
@@ -368,6 +410,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               _buildSearchBar(),
               _buildHomeActiveFilters(),
+              const SizedBox(height: 16),
+              _buildMoodQuickFilters(),
               const SizedBox(height: 24),
               _buildQuickActionCard(),
               const SizedBox(height: 24),
@@ -544,6 +588,83 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMoodQuickFilters() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '今天想吃哪種感覺？',
+          style: TextStyle(
+            color: Color(0xFF2E3A2F),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 92,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _moodQuickFilters.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final option = _moodQuickFilters[index];
+
+              return InkWell(
+                key: ValueKey('mood-filter-${option.label}'),
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => _applyMoodQuickFilter(option),
+                child: Container(
+                  width: 104,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFE5EDE2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.035),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(option.icon, color: const Color(0xFF4E8D57)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            option.label,
+                            style: const TextStyle(
+                              color: Color(0xFF2E3A2F),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            option.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -970,6 +1091,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _updateHomeFilters(_homeFiltersWithTag(_homeSearchFilters, tag));
   }
 
+  void _applyMoodQuickFilter(_MoodQuickFilter option) {
+    _dismissKeyboard();
+    _homeSearchController.text = option.query;
+    _updateHomeFilters(option.filters);
+  }
+
   FoodSearchFilters _homeFiltersWithCategory(
     FoodSearchFilters filters,
     String category,
@@ -1004,4 +1131,20 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
+}
+
+class _MoodQuickFilter {
+  const _MoodQuickFilter({
+    required this.label,
+    required this.description,
+    required this.icon,
+    required this.query,
+    required this.filters,
+  });
+
+  final String label;
+  final String description;
+  final IconData icon;
+  final String query;
+  final FoodSearchFilters filters;
 }
