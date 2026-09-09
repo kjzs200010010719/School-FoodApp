@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/food_item.dart';
@@ -298,6 +300,10 @@ class _WheelScreenState extends State<WheelScreen>
     final categoryCandidates = _selectedCategory == null
         ? const <FoodItem>[]
         : _wheelService.getCandidatesByCategory(candidates, _selectedCategory!);
+    final wheelCategories = _wheelService.getCandidateCategories(candidates);
+    final visualCategories = wheelCategories.isEmpty
+        ? _categories.take(6).toList()
+        : wheelCategories;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -308,23 +314,66 @@ class _WheelScreenState extends State<WheelScreen>
       ),
       child: Column(
         children: [
-          RotationTransition(
-            turns: _turns,
-            child: Container(
-              width: 112,
-              height: 112,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFD86B),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.casino_rounded,
-                size: 58,
-                color: Color(0xFF2F3E30),
-              ),
+          SizedBox(
+            width: 202,
+            height: 214,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: RotationTransition(
+                    turns: _turns,
+                    child: CustomPaint(
+                      size: const Size(176, 176),
+                      painter: _WheelPainter(
+                        categories: visualCategories,
+                        selectedCategory: _selectedCategory,
+                      ),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_drop_down_rounded,
+                  size: 42,
+                  color: Color(0xFFD68A00),
+                ),
+                Positioned(
+                  top: 84,
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFFE3A3)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.casino_rounded,
+                      color: Color(0xFF2F3E30),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
+          Text(
+            '類型轉盤 ${visualCategories.length} 格',
+            style: const TextStyle(
+              color: Color(0xFFD68A00),
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 10),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             child: _selectedCategory == null
@@ -542,5 +591,92 @@ class _WheelScreenState extends State<WheelScreen>
     if (mounted) {
       setState(() {});
     }
+  }
+}
+
+class _WheelPainter extends CustomPainter {
+  const _WheelPainter({
+    required this.categories,
+    required this.selectedCategory,
+  });
+
+  final List<String> categories;
+  final String? selectedCategory;
+
+  static const List<Color> _segmentColors = [
+    Color(0xFFFFD86B),
+    Color(0xFF9CCF8E),
+    Color(0xFFFFA36C),
+    Color(0xFF8FC9E8),
+    Color(0xFFEFB3C6),
+    Color(0xFFC8B6FF),
+    Color(0xFFFFE3A3),
+    Color(0xFFA8DADC),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final labels = categories.isEmpty
+        ? const ['推薦']
+        : categories.take(8).toList();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final sweep = math.pi * 2 / labels.length;
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    for (var index = 0; index < labels.length; index += 1) {
+      final label = labels[index];
+      final startAngle = -math.pi / 2 + index * sweep;
+      final paint = Paint()
+        ..color = selectedCategory == label
+            ? const Color(0xFFD68A00)
+            : _segmentColors[index % _segmentColors.length]
+        ..style = PaintingStyle.fill;
+
+      canvas.drawArc(rect, startAngle, sweep, true, paint);
+      canvas.drawArc(rect, startAngle, sweep, true, borderPaint);
+      _paintLabel(canvas, center, radius, startAngle + sweep / 2, label);
+    }
+
+    canvas.drawCircle(center, radius, borderPaint);
+  }
+
+  void _paintLabel(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double angle,
+    String label,
+  ) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: selectedCategory == label
+              ? Colors.white
+              : const Color(0xFF2F3E30),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: radius * 0.7);
+
+    final offset = Offset(
+      center.dx + math.cos(angle) * radius * 0.56 - textPainter.width / 2,
+      center.dy + math.sin(angle) * radius * 0.56 - textPainter.height / 2,
+    );
+    textPainter.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(covariant _WheelPainter oldDelegate) {
+    return oldDelegate.selectedCategory != selectedCategory ||
+        oldDelegate.categories.join(',') != categories.join(',');
   }
 }

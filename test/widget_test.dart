@@ -122,6 +122,13 @@ void main() {
     expect(find.text('轉盤條件'), findsOneWidget);
 
     await tester.scrollUntilVisible(
+      find.text('類型轉盤 6 格'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('類型轉盤 6 格'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
       find.text('請先設定轉盤條件，系統會列出符合條件的候選餐點。'),
       200,
       scrollable: find.byType(Scrollable).first,
