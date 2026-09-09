@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/user_profile.dart';
+import 'package:my_app/screens/merchant_login_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
 
@@ -108,6 +109,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: _loginWithDemo,
                   icon: const Icon(Icons.login_rounded),
                   label: const Text('測試登入'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _goToMerchantLogin,
+                  icon: const Icon(Icons.storefront_rounded),
+                  label: const Text('商家登入'),
                 ),
               ),
             ],
@@ -1174,6 +1184,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _loginWithDemo() {
     _profileService.loginWithDemo();
     widget.onLoginComplete?.call();
+  }
+
+  void _goToMerchantLogin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MerchantLoginScreen()),
+    );
   }
 
   String _budgetLabel(int? budgetMax) {

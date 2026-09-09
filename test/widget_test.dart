@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/main.dart';
+import 'package:my_app/services/merchant_auth_service.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
 import 'package:my_app/widgets/food_card.dart';
@@ -9,6 +10,7 @@ import 'package:my_app/widgets/food_card.dart';
 void main() {
   setUp(() {
     UserActivityService.instance.clearForTesting();
+    MerchantAuthService.instance.clearForTesting();
     UserProfileService.instance.clearForTesting();
   });
 
@@ -246,6 +248,11 @@ void main() {
     expect(find.text('膳解人意'), findsOneWidget);
     expect(find.text('今日推薦'), findsOneWidget);
     expect(UserProfileService.instance.isLoggedIn, isTrue);
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('管理者商品上架'), findsNothing);
   });
 
   testWidgets('opens collection tabs from profile stats', (
@@ -326,5 +333,53 @@ void main() {
 
     expect(find.text('收藏與紀錄'), findsOneWidget);
     expect(find.text('購買紀錄'), findsWidgets);
+  });
+
+  testWidgets('creates admin product listing draft', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商家登入'), findsOneWidget);
+
+    await tester.tap(find.text('商家登入'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商家登入'), findsOneWidget);
+    expect(find.text('商家後台入口'), findsOneWidget);
+
+    await tester.tap(find.text('進入商家後台'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('管理者上架'), findsOneWidget);
+    expect(find.text('新增商品'), findsOneWidget);
+    expect(find.textContaining('目前商家：銘傳校園示範商家'), findsOneWidget);
+    expect(find.text('全家龜山銘美店'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, '餐點名稱'), '番茄雞胸盒');
+    final submitButton = find.widgetWithText(FilledButton, '建立上架草稿');
+    await tester.scrollUntilVisible(
+      submitButton,
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView).first, const Offset(0, -360));
+    await tester.pumpAndSettle();
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('番茄雞胸盒'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('待上架商品'), findsWidgets);
+    expect(find.text('番茄雞胸盒'), findsOneWidget);
+    expect(find.textContaining('全家龜山銘美店'), findsWidgets);
   });
 }
