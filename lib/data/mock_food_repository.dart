@@ -108,6 +108,7 @@ class MockFoodRepository {
       isExpiringSoon: isExpiringSoon,
       ecoPriorityScore: 0.35 + ((index % 20) * 0.015),
       recommendationReason: _buildReason(tags, price, distance, isExpiringSoon),
+      imageUrl: _imageUrlFor(template.category, index),
       icon: template.icon,
     );
   }
@@ -183,8 +184,14 @@ class MockFoodRepository {
       ecoPriorityScore: 0.85 + ((index % 6) * 0.02),
       recommendationReason:
           '${store.brandLabel} ${store.name} 即期品，${template.discountLabel} 並剩餘 ${template.stockCount} 份',
+      imageUrl: _imageUrlFor(template.category, index + 200),
       icon: template.icon,
     );
+  }
+
+  static String _imageUrlFor(String category, int index) {
+    final urls = _categoryImageUrls[category] ?? _categoryImageUrls['便當']!;
+    return urls[index % urls.length];
   }
 
   static _NutritionEstimate _nutritionFor(String category, int index) {
@@ -348,6 +355,53 @@ const List<int> _distanceTiers = [
   1800,
   2200,
 ];
+
+const Map<String, List<String>> _categoryImageUrls = {
+  '便當': [
+    'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=800&q=80',
+  ],
+  '飯糰': [
+    'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=800&q=80',
+  ],
+  '輕食': [
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
+  ],
+  '甜點': [
+    'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80',
+  ],
+  '麵食': [
+    'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80',
+  ],
+  '早餐': [
+    'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1493770348161-369560ae357d?auto=format&fit=crop&w=800&q=80',
+  ],
+  '沙拉': [
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=800&q=80',
+  ],
+  '和食': [
+    'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?auto=format&fit=crop&w=800&q=80',
+  ],
+  '韓式': [
+    'https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=800&q=80',
+  ],
+  '捲餅': [
+    'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1562059390-a761a084768e?auto=format&fit=crop&w=800&q=80',
+  ],
+  '湯品': [
+    'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?auto=format&fit=crop&w=800&q=80',
+  ],
+};
 
 const List<ConvenienceStore> _convenienceStores = [
   ConvenienceStore(

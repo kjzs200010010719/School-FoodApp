@@ -24,6 +24,7 @@ class FoodItem {
     required this.stockCount,
     required this.ecoPriorityScore,
     required this.recommendationReason,
+    required this.imageUrl,
     required this.icon,
     this.originalPrice,
     this.discountLabel,
@@ -58,6 +59,7 @@ class FoodItem {
   final bool isExpiringSoon;
   final double ecoPriorityScore;
   final String recommendationReason;
+  final String imageUrl;
   final IconData icon;
   final bool isFavorite;
 
@@ -156,6 +158,7 @@ class FoodItem {
     bool? isExpiringSoon,
     double? ecoPriorityScore,
     String? recommendationReason,
+    String? imageUrl,
     IconData? icon,
     bool? isFavorite,
   }) {
@@ -186,6 +189,7 @@ class FoodItem {
       isExpiringSoon: isExpiringSoon ?? this.isExpiringSoon,
       ecoPriorityScore: ecoPriorityScore ?? this.ecoPriorityScore,
       recommendationReason: recommendationReason ?? this.recommendationReason,
+      imageUrl: imageUrl ?? this.imageUrl,
       icon: icon ?? this.icon,
       isFavorite: isFavorite ?? this.isFavorite,
     );

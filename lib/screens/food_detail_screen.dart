@@ -3,6 +3,7 @@ import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/cart_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_info_tag.dart';
+import 'package:my_app/widgets/food_photo.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   const FoodDetailScreen({super.key, required this.food});
@@ -89,59 +90,48 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: food.isExpiringSoon
-                  ? const Color(0xFFFFF1CC)
-                  : const Color(0xFFEAF5E8),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              food.icon,
-              size: 38,
-              color: food.isExpiringSoon
-                  ? const Color(0xFFD68A00)
-                  : const Color(0xFF4E8D57),
+          AspectRatio(
+            aspectRatio: 16 / 10,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return FoodPhoto(
+                  food: food,
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  borderRadius: 18,
+                );
+              },
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  food.name,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E3A2F),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  food.storeName,
-                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FoodInfoTag(text: food.category),
-                    FoodInfoTag(text: food.priceLabel),
-                    if (food.discountLabel != null)
-                      FoodInfoTag(text: food.discountLabel!, warning: true),
-                    if (food.isExpiringSoon)
-                      FoodInfoTag(text: food.timeLeftLabel, warning: true),
-                  ],
-                ),
-              ],
+          const SizedBox(height: 14),
+          Text(
+            food.name,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3A2F),
             ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            food.storeName,
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FoodInfoTag(text: food.category),
+              FoodInfoTag(text: food.priceLabel),
+              if (food.discountLabel != null)
+                FoodInfoTag(text: food.discountLabel!, warning: true),
+              if (food.isExpiringSoon)
+                FoodInfoTag(text: food.timeLeftLabel, warning: true),
+            ],
           ),
         ],
       ),

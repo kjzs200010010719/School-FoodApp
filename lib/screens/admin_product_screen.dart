@@ -363,15 +363,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF5E8),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.image_rounded, color: Color(0xFF4E8D57)),
-          ),
+          _buildDraftImage(draft),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -408,6 +400,31 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDraftImage(ProductListingDraft draft) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: 58,
+        height: 58,
+        child: draft.imageUrl.isEmpty
+            ? _buildDraftImageFallback()
+            : Image.network(
+                draft.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    _buildDraftImageFallback(),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildDraftImageFallback() {
+    return Container(
+      color: const Color(0xFFEAF5E8),
+      child: const Icon(Icons.image_rounded, color: Color(0xFF4E8D57)),
     );
   }
 

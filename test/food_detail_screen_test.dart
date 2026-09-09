@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/widgets/food_photo.dart';
 
 void main() {
   setUp(() {
@@ -16,6 +17,15 @@ void main() {
 
     expect(find.text('餐點資訊'), findsOneWidget);
     expect(find.text(food.name), findsOneWidget);
+    expect(find.byType(FoodPhoto), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('推薦原因'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('推薦原因'), findsOneWidget);
     expect(find.text('減廢分數', skipOffstage: false), findsOneWidget);
 
@@ -54,16 +64,19 @@ void main() {
     final food = MockFoodRepository.allFoods.first;
 
     await tester.pumpWidget(MaterialApp(home: FoodDetailScreen(food: food)));
+    final favoriteButton = find.text('加入收藏');
     await tester.scrollUntilVisible(
-      find.text('加入收藏'),
-      300,
+      favoriteButton,
+      180,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.ensureVisible(favoriteButton);
+    await tester.pumpAndSettle();
 
     expect(find.text('加入收藏'), findsOneWidget);
     expect(find.text('加入購物車'), findsOneWidget);
 
-    await tester.tap(find.text('加入收藏'));
+    await tester.tap(favoriteButton);
     await tester.pump();
 
     expect(find.text('取消收藏'), findsOneWidget);
@@ -80,13 +93,16 @@ void main() {
     final food = MockFoodRepository.allFoods.first;
 
     await tester.pumpWidget(MaterialApp(home: FoodDetailScreen(food: food)));
+    final addToCartButton = find.text('加入購物車');
     await tester.scrollUntilVisible(
-      find.text('加入購物車'),
-      300,
+      addToCartButton,
+      180,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.ensureVisible(addToCartButton);
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('加入購物車'));
+    await tester.tap(addToCartButton);
     await tester.pump();
 
     expect(find.text('查看購物車'), findsOneWidget);

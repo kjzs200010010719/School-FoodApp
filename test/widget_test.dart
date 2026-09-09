@@ -33,6 +33,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('餐點資訊'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('推薦原因'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('推薦原因'), findsOneWidget);
   });
 

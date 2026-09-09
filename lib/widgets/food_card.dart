@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/widgets/food_info_tag.dart';
+import 'package:my_app/widgets/food_photo.dart';
 
 enum FoodCardVariant { recommendation, expiring }
 
@@ -62,19 +63,7 @@ class FoodCard extends StatelessWidget {
   }
 
   Widget _buildIconBox() {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        color: _isExpiring ? const Color(0xFFFFF1CC) : const Color(0xFFEAF5E8),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Icon(
-        food.icon,
-        size: 34,
-        color: _isExpiring ? const Color(0xFFD68A00) : const Color(0xFF4E8D57),
-      ),
-    );
+    return FoodPhoto(food: food, width: 72, height: 72, borderRadius: 18);
   }
 
   Widget _buildContent() {

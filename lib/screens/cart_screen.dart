@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/models/cart_item.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/widgets/food_photo.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key, this.onCheckoutComplete});
@@ -126,22 +127,7 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: food.isExpiringSoon
-                  ? const Color(0xFFFFF1CC)
-                  : const Color(0xFFEAF5E8),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              food.icon,
-              color: food.isExpiringSoon
-                  ? const Color(0xFFD68A00)
-                  : const Color(0xFF4E8D57),
-            ),
-          ),
+          FoodPhoto(food: food, width: 58, height: 58),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
