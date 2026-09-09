@@ -103,3 +103,30 @@ test('merchant endpoints can login and create product drafts', async () => {
   assert.equal(listResponse.status, 200);
   assert.ok(listBody.items.some((draft) => draft.name === '番茄雞胸盒'));
 });
+
+test('recommendation feedback stores rating tags and affects scores', async () => {
+  const createResponse = await fetch(
+    `${baseUrl}/api/recommendations/food-001/feedback`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        actionType: 'rating',
+        rating: 5,
+        tags: ['會再回購'],
+      }),
+    },
+  );
+  const createBody = await createResponse.json();
+
+  assert.equal(createResponse.status, 201);
+  assert.equal(createBody.rating, 5);
+  assert.deepEqual(createBody.tags, ['會再回購']);
+
+  const listResponse = await fetch(`${baseUrl}/api/recommendations`);
+  const listBody = await listResponse.json();
+  const food = listBody.items.find((item) => item.id === 'food-001');
+
+  assert.equal(listResponse.status, 200);
+  assert.ok(food.scores.feedbackScore > 0.5);
+});

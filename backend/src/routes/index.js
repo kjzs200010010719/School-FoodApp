@@ -93,19 +93,42 @@ function scoreFood(food) {
   const ecoPriorityScore = demoUser.preferences.wasteReductionEnabled
     ? food.ecoPriorityScore
     : 0;
+  const feedbackScore = scoreFeedback(food.id);
   const finalScore =
     preferenceScore * 0.35 +
-    distanceScore * 0.2 +
-    budgetScore * 0.2 +
-    ecoPriorityScore * 0.25;
+    distanceScore * 0.18 +
+    budgetScore * 0.18 +
+    ecoPriorityScore * 0.19 +
+    feedbackScore * 0.1;
 
   return {
     preferenceScore: Number(preferenceScore.toFixed(3)),
     distanceScore: Number(distanceScore.toFixed(3)),
     budgetScore: Number(budgetScore.toFixed(3)),
     ecoPriorityScore: Number(ecoPriorityScore.toFixed(3)),
+    feedbackScore: Number(feedbackScore.toFixed(3)),
     finalScore: Number(finalScore.toFixed(3)),
   };
+}
+
+function scoreFeedback(foodId) {
+  const latestFeedback = recommendationFeedback
+    .filter((feedback) => feedback.foodId === foodId)
+    .at(-1);
+
+  if (!latestFeedback || typeof latestFeedback.rating !== 'number') {
+    return 0.5;
+  }
+
+  let score = (latestFeedback.rating - 1) / 4;
+  if (latestFeedback.tags.includes('會再回購')) {
+    score += 0.1;
+  }
+  if (latestFeedback.tags.includes('不符合偏好')) {
+    score -= 0.25;
+  }
+
+  return Math.min(1, Math.max(0, score));
 }
 
 router.get('/health', (req, res) => {
@@ -275,13 +298,27 @@ router.post('/recommendations/:foodId/feedback', (req, res) => {
   const feedback = {
     foodId: food.id,
     actionType: req.body.actionType || 'view',
-    rating: req.body.rating ?? null,
+    rating: normalizeRating(req.body.rating),
+    tags: Array.isArray(req.body.tags) ? req.body.tags : [],
     createdAt: new Date().toISOString(),
   };
   recommendationFeedback.push(feedback);
 
   return res.status(201).json(feedback);
 });
+
+function normalizeRating(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const rating = Number(value);
+  if (!Number.isFinite(rating)) {
+    return null;
+  }
+
+  return Math.min(5, Math.max(1, Math.round(rating)));
+}
 
 router.get('/me/favorites', (req, res) => {
   const items = foods.filter((food) => favorites.has(food.id)).map(withStore);

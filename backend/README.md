@@ -18,6 +18,7 @@ npm start
 GET http://localhost:3000/api/health
 GET http://localhost:3000/api/foods
 GET http://localhost:3000/api/recommendations
+POST http://localhost:3000/api/recommendations/food-001/feedback
 ```
 
 ## 環境變數
@@ -27,7 +28,7 @@ GET http://localhost:3000/api/recommendations
 ## 目前狀態
 
 - 已建立 API 路由骨架。
-- 已提供餐點、推薦、收藏、瀏覽紀錄、搜尋紀錄等 mock 回應。
+- 已提供餐點、推薦、收藏、瀏覽紀錄、搜尋紀錄、推薦回饋等 mock 回應。
 - 已新增 `database/schema.sql`，可作為學校雲端 MySQL 建表依據。
 - 尚未正式連接 MySQL。
 - 尚未加入正式會員密碼加密與 JWT 驗證。
