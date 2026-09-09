@@ -192,8 +192,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('推薦餐點'), findsOneWidget);
-    expect(find.text('偏好 40%'), findsOneWidget);
-    expect(find.text('距離 20%'), findsOneWidget);
+    expect(find.text('偏好 35%'), findsOneWidget);
+    expect(find.text('距離 18%'), findsOneWidget);
+    expect(find.text('回饋 10%'), findsOneWidget);
     expect(find.textContaining('推薦分數'), findsWidgets);
 
     await tester.tap(find.text('查看推薦原則'));

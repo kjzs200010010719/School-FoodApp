@@ -1,3 +1,4 @@
+import 'package:my_app/models/food_feedback.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/user_preference.dart';
@@ -119,6 +120,47 @@ void main() {
     expect(score.distancePercent, inInclusiveRange(0, 100));
     expect(score.budgetPercent, inInclusiveRange(0, 100));
     expect(score.ecoPercent, inInclusiveRange(0, 100));
+    expect(score.feedbackPercent, inInclusiveRange(0, 100));
+  });
+
+  test('recommendations use food feedback as a ranking signal', () {
+    const service = RecommendationService();
+    final dislikedFood = MockFoodRepository.allFoods.first.copyWith(
+      id: 'feedback-low',
+      name: '低分餐點',
+      price: 120,
+      distanceMeters: 500,
+      businessWeekdays: const [DateTime.wednesday],
+    );
+    final likedFood = MockFoodRepository.allFoods.first.copyWith(
+      id: 'feedback-high',
+      name: '高分餐點',
+      price: 120,
+      distanceMeters: 500,
+      businessWeekdays: const [DateTime.wednesday],
+    );
+
+    final recommendations = service.getRecommendations(
+      foods: [dislikedFood, likedFood],
+      preference: UserPreference.defaultPreference,
+      feedbackByFoodId: {
+        dislikedFood.id: FoodFeedback(
+          foodId: dislikedFood.id,
+          rating: 1,
+          tags: const ['不符合偏好'],
+          createdAt: DateTime(2026, 8, 26),
+        ),
+        likedFood.id: FoodFeedback(
+          foodId: likedFood.id,
+          rating: 5,
+          tags: const ['會再回購'],
+          createdAt: DateTime(2026, 8, 26),
+        ),
+      },
+      now: wednesday,
+    );
+
+    expect(recommendations.first.id, likedFood.id);
   });
 
   test('recommendations exclude foods closed on the selected date', () {

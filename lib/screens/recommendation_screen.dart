@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/models/food_feedback.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
@@ -28,13 +29,13 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   void initState() {
     super.initState();
     recommendedFoods = _buildRecommendations();
-    _activityService.addListener(_refresh);
+    _activityService.addListener(_refreshRecommendations);
     _profileService.addListener(_refreshRecommendations);
   }
 
   @override
   void dispose() {
-    _activityService.removeListener(_refresh);
+    _activityService.removeListener(_refreshRecommendations);
     _profileService.removeListener(_refreshRecommendations);
     super.dispose();
   }
@@ -72,6 +73,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                 final score = _recommendationService.scoreFood(
                   food,
                   preference,
+                  feedback: _feedbackByFoodId[food.id],
                 );
 
                 return Column(
@@ -141,9 +143,11 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             runSpacing: 8,
             children: [
               _buildRuleChip('偏好 40%'),
-              _buildRuleChip('距離 20%'),
-              _buildRuleChip('預算 20%'),
-              _buildRuleChip('減廢 20%'),
+              _buildRuleChip('偏好 35%'),
+              _buildRuleChip('距離 18%'),
+              _buildRuleChip('預算 18%'),
+              _buildRuleChip('減廢 19%'),
+              _buildRuleChip('回饋 10%'),
             ],
           ),
           const SizedBox(height: 12),
@@ -228,6 +232,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
               _buildScoreChip('距離', score.distancePercent),
               _buildScoreChip('預算', score.budgetPercent),
               _buildScoreChip('減廢', score.ecoPercent),
+              _buildScoreChip('回饋', score.feedbackPercent),
             ],
           ),
         ],
@@ -257,7 +262,15 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
     return _recommendationService.getRecommendations(
       foods: MockFoodRepository.allFoods,
       preference: _currentPreference,
+      feedbackByFoodId: _feedbackByFoodId,
     );
+  }
+
+  Map<String, FoodFeedback> get _feedbackByFoodId {
+    return {
+      for (final feedback in _activityService.feedbacks)
+        feedback.foodId: feedback,
+    };
   }
 
   UserPreference get _currentPreference {
@@ -330,10 +343,10 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildRuleRow('先排除今日未營業、超出預算或距離的餐點'),
-                _buildRuleRow('偏好標籤符合度佔 40%，例如高蛋白、低脂、清爽'),
-                _buildRuleRow('距離與預算各佔 20%，越接近設定條件分數越高'),
-                _buildRuleRow('減廢分數佔 20%，鼓勵選擇即期或高利用率餐點'),
-                _buildRuleRow('進入詳情、收藏與購買紀錄未來可回饋推薦排序'),
+                _buildRuleRow('偏好標籤符合度佔 35%，例如高蛋白、低脂、清爽'),
+                _buildRuleRow('距離與預算各佔 18%，越接近設定條件分數越高'),
+                _buildRuleRow('減廢分數佔 19%，鼓勵選擇即期或高利用率餐點'),
+                _buildRuleRow('餐點評分與回饋標籤佔 10%，會影響後續排序'),
               ],
             ),
           ),
@@ -372,12 +385,6 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
       context,
       MaterialPageRoute(builder: (context) => FoodDetailScreen(food: food)),
     );
-  }
-
-  void _refresh() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _refreshRecommendations() {

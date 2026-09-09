@@ -1,3 +1,4 @@
+import 'package:my_app/models/food_feedback.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
 
@@ -7,6 +8,7 @@ class RecommendationService {
   List<FoodItem> getRecommendations({
     required List<FoodItem> foods,
     required UserPreference preference,
+    Map<String, FoodFeedback> feedbackByFoodId = const {},
     DateTime? now,
   }) {
     final today = now ?? DateTime.now();
@@ -27,8 +29,16 @@ class RecommendationService {
     }).toList();
 
     candidates.sort((a, b) {
-      final bScore = scoreFood(b, preference).totalScore;
-      final aScore = scoreFood(a, preference).totalScore;
+      final bScore = scoreFood(
+        b,
+        preference,
+        feedback: feedbackByFoodId[b.id],
+      ).totalScore;
+      final aScore = scoreFood(
+        a,
+        preference,
+        feedback: feedbackByFoodId[a.id],
+      ).totalScore;
       return bScore.compareTo(aScore);
     });
 
@@ -37,8 +47,9 @@ class RecommendationService {
 
   RecommendationScoreBreakdown scoreFood(
     FoodItem food,
-    UserPreference preference,
-  ) {
+    UserPreference preference, {
+    FoodFeedback? feedback,
+  }) {
     final tagMatches = food.tags
         .where((tag) => preference.preferredTags.contains(tag))
         .length;
@@ -52,19 +63,38 @@ class RecommendationService {
     final ecoScore = preference.wasteReductionEnabled
         ? food.ecoPriorityScore
         : 0;
+    final feedbackScore = _feedbackScore(feedback);
     final totalScore =
-        preferenceScore * 0.4 +
-        distanceScore.clamp(0, 1) * 0.2 +
-        budgetScore.clamp(0, 1) * 0.2 +
-        ecoScore * 0.2;
+        preferenceScore * 0.35 +
+        distanceScore.clamp(0, 1) * 0.18 +
+        budgetScore.clamp(0, 1) * 0.18 +
+        ecoScore * 0.19 +
+        feedbackScore * 0.1;
 
     return RecommendationScoreBreakdown(
       preferenceScore: preferenceScore.clamp(0, 1).toDouble(),
       distanceScore: distanceScore.clamp(0, 1).toDouble(),
       budgetScore: budgetScore.clamp(0, 1).toDouble(),
       ecoScore: ecoScore.clamp(0, 1).toDouble(),
+      feedbackScore: feedbackScore,
       totalScore: totalScore.clamp(0, 1).toDouble(),
     );
+  }
+
+  double _feedbackScore(FoodFeedback? feedback) {
+    if (feedback == null) {
+      return 0.5;
+    }
+
+    var score = (feedback.rating - 1) / 4;
+    if (feedback.tags.contains('會再回購')) {
+      score += 0.1;
+    }
+    if (feedback.tags.contains('不符合偏好')) {
+      score -= 0.25;
+    }
+
+    return score.clamp(0, 1).toDouble();
   }
 }
 
@@ -74,6 +104,7 @@ class RecommendationScoreBreakdown {
     required this.distanceScore,
     required this.budgetScore,
     required this.ecoScore,
+    required this.feedbackScore,
     required this.totalScore,
   });
 
@@ -81,6 +112,7 @@ class RecommendationScoreBreakdown {
   final double distanceScore;
   final double budgetScore;
   final double ecoScore;
+  final double feedbackScore;
   final double totalScore;
 
   int get preferencePercent => _toPercent(preferenceScore);
@@ -90,6 +122,8 @@ class RecommendationScoreBreakdown {
   int get budgetPercent => _toPercent(budgetScore);
 
   int get ecoPercent => _toPercent(ecoScore);
+
+  int get feedbackPercent => _toPercent(feedbackScore);
 
   int get totalPercent => _toPercent(totalScore);
 
