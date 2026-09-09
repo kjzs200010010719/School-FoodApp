@@ -48,6 +48,15 @@
 | GET | `/api/me/preferences` | 取得飲食偏好 |
 | PUT | `/api/me/preferences` | 更新飲食偏好、預算、距離 |
 
+### Merchant / Admin
+
+| Method | Path | 用途 |
+| --- | --- | --- |
+| POST | `/api/merchant/auth/login` | 商家登入 |
+| GET | `/api/merchant/me` | 取得商家資料與可管理門市 |
+| GET | `/api/merchant/product-drafts` | 取得商家上架草稿 |
+| POST | `/api/merchant/product-drafts` | 建立商品上架草稿 |
+
 ### Foods / Stores
 
 | Method | Path | 用途 |

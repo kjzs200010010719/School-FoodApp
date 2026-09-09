@@ -63,3 +63,43 @@ test('favorite endpoints can add and list foods', async () => {
   assert.equal(listResponse.status, 200);
   assert.ok(listBody.items.some((food) => food.id === 'food-001'));
 });
+
+test('merchant endpoints can login and create product drafts', async () => {
+  const loginResponse = await fetch(`${baseUrl}/api/merchant/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'owner@example.com' }),
+  });
+  const loginBody = await loginResponse.json();
+
+  assert.equal(loginResponse.status, 200);
+  assert.equal(loginBody.merchant.email, 'owner@example.com');
+  assert.ok(loginBody.merchant.allowedStores.length >= 1);
+
+  const createResponse = await fetch(`${baseUrl}/api/merchant/product-drafts`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      storeId: loginBody.merchant.allowedStores[0].id,
+      name: '番茄雞胸盒',
+      category: '便當',
+      price: 120,
+      stockCount: 5,
+      tags: ['高蛋白', '低脂'],
+      ingredients: ['雞胸肉', '番茄'],
+      calories: 520,
+      weightGrams: 430,
+    }),
+  });
+  const createBody = await createResponse.json();
+
+  assert.equal(createResponse.status, 201);
+  assert.equal(createBody.name, '番茄雞胸盒');
+  assert.equal(createBody.status, 'draft');
+
+  const listResponse = await fetch(`${baseUrl}/api/merchant/product-drafts`);
+  const listBody = await listResponse.json();
+
+  assert.equal(listResponse.status, 200);
+  assert.ok(listBody.items.some((draft) => draft.name === '番茄雞胸盒'));
+});

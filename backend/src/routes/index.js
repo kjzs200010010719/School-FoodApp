@@ -6,6 +6,15 @@ const favorites = new Set();
 const history = [];
 const searchLogs = [];
 const recommendationFeedback = [];
+const productDrafts = [];
+
+const demoMerchant = {
+  id: 'merchant-demo',
+  businessName: '銘傳校園示範商家',
+  email: 'store@mcu-food.local',
+  contactPhone: '03-350-7001',
+  allowedStoreIds: ['store-001', 'store-002'],
+};
 
 function withStore(food) {
   const store = stores.find((item) => item.id === food.storeId);
@@ -125,6 +134,66 @@ router.post('/auth/logout', (req, res) => {
   res.json({
     message: '登出成功',
   });
+});
+
+router.post('/merchant/auth/login', (req, res) => {
+  res.json({
+    message: '商家登入成功',
+    merchant: {
+      ...demoMerchant,
+      email: req.body.email || demoMerchant.email,
+      allowedStores: stores.filter((store) =>
+        demoMerchant.allowedStoreIds.includes(store.id),
+      ),
+    },
+    token: 'local-demo-merchant-token',
+  });
+});
+
+router.get('/merchant/me', (req, res) => {
+  res.json({
+    ...demoMerchant,
+    allowedStores: stores.filter((store) =>
+      demoMerchant.allowedStoreIds.includes(store.id),
+    ),
+  });
+});
+
+router.get('/merchant/product-drafts', (req, res) => {
+  res.json({
+    items: productDrafts,
+    total: productDrafts.length,
+  });
+});
+
+router.post('/merchant/product-drafts', (req, res) => {
+  const allowedStoreId = demoMerchant.allowedStoreIds.includes(req.body.storeId)
+    ? req.body.storeId
+    : demoMerchant.allowedStoreIds[0];
+  const store = stores.find((item) => item.id === allowedStoreId);
+  const draft = {
+    id: `draft-${Date.now()}`,
+    storeId: allowedStoreId,
+    storeName: store?.name || '',
+    name: req.body.name || '未命名餐點',
+    category: req.body.category || '便當',
+    price: Number(req.body.price || 0),
+    stockCount: Number(req.body.stockCount || 1),
+    tags: Array.isArray(req.body.tags) ? req.body.tags : [],
+    ingredients: Array.isArray(req.body.ingredients) ? req.body.ingredients : [],
+    calories: Number(req.body.calories || 0),
+    weightGrams: Number(req.body.weightGrams || 0),
+    proteinGrams: Number(req.body.proteinGrams || 0),
+    fatGrams: Number(req.body.fatGrams || 0),
+    carbsGrams: Number(req.body.carbsGrams || 0),
+    imageUrl: req.body.imageUrl || '',
+    status: 'draft',
+    createdAt: new Date().toISOString(),
+  };
+
+  productDrafts.unshift(draft);
+
+  res.status(201).json(draft);
 });
 
 router.get('/me', (req, res) => {
