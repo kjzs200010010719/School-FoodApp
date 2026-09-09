@@ -32,12 +32,19 @@ void main() {
         name: '王小明',
         dietaryTags: ['低脂'],
         budgetMax: 120,
+        heightCm: 176,
+        weightKg: 72,
+        healthGoal: HealthGoal.muscleGain,
       ),
     );
 
     expect(service.profile?.name, '王小明');
     expect(service.profile?.dietaryTags, ['低脂']);
     expect(service.profile?.budgetMax, 120);
+    expect(service.profile?.heightCm, 176);
+    expect(service.profile?.weightKg, 72);
+    expect(service.profile?.healthGoal, HealthGoal.muscleGain);
+    expect(service.profile?.dailyNutritionTarget.calories, greaterThan(0));
   });
 
   test('restores saved profile from local storage', () async {
@@ -45,6 +52,9 @@ void main() {
       UserProfile.demo.copyWith(
         name: '陳小美',
         dietaryTags: ['素食', '高纖'],
+        heightCm: 162,
+        weightKg: 58,
+        healthGoal: HealthGoal.fatLoss,
         clearBudgetMax: true,
       ),
     );
@@ -55,5 +65,8 @@ void main() {
     expect(service.profile?.name, '陳小美');
     expect(service.profile?.dietaryTags, ['素食', '高纖']);
     expect(service.profile?.budgetMax, isNull);
+    expect(service.profile?.heightCm, 162);
+    expect(service.profile?.weightKg, 58);
+    expect(service.profile?.healthGoal, HealthGoal.fatLoss);
   });
 }

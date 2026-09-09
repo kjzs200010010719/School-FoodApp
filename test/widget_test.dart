@@ -255,6 +255,8 @@ void main() {
     );
 
     expect(find.text('今日健康摘要'), findsOneWidget);
+    expect(find.text('每日需求 1950 kcal'), findsOneWidget);
+    expect(find.text('維持健康 / BMI 22.5'), findsOneWidget);
     expect(find.text(food.caloriesLabel), findsOneWidget);
 
     await tester.scrollUntilVisible(

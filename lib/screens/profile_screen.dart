@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 16),
         _buildStats(),
         const SizedBox(height: 16),
-        _buildHealthSummarySection(),
+        _buildHealthSummarySection(profile),
         const SizedBox(height: 16),
         _buildEcoAchievementSection(),
         const SizedBox(height: 16),
@@ -281,8 +281,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHealthSummarySection() {
-    final summary = _buildTodayHealthSummary();
+  Widget _buildHealthSummarySection(UserProfile profile) {
+    final target = profile.dailyNutritionTarget;
+    final summary = _buildTodayHealthSummary(profile);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -323,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      '依購買紀錄估算攝取狀態',
+                      '依身高體重與目標估算每日需求',
                       style: TextStyle(fontSize: 13, color: Colors.black54),
                     ),
                   ],
@@ -332,6 +333,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          _buildDailyTargetPanel(profile, target),
+          const SizedBox(height: 14),
           if (summary.mealCount == 0)
             Container(
               width: double.infinity,
@@ -362,7 +365,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: _buildHealthMetric(
                     '熱量',
                     '${summary.calories} kcal',
-                    '建議值 ${summary.dailyCalorieTarget} kcal',
+                    '建議值 ${target.calories} kcal',
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -444,6 +447,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildDailyTargetPanel(
+    UserProfile profile,
+    DailyNutritionTarget target,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF5E8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${profile.healthGoal.label} / BMI ${profile.bmiLabel}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E3A2F),
+                  ),
+                ),
+              ),
+              Text(
+                profile.bmiStatus,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4E8D57),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            profile.healthGoal.description,
+            style: const TextStyle(color: Colors.black54, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildTargetChip('每日需求', '${target.calories} kcal'),
+              _buildTargetChip('蛋白質', '${target.proteinGrams} g'),
+              _buildTargetChip('脂肪', '${target.fatGrams} g'),
+              _buildTargetChip('碳水', '${target.carbsGrams} g'),
+              _buildTargetChip('飲水', '${target.waterMl} ml'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetChip(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        '$title $value',
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF4E8D57),
+        ),
       ),
     );
   }
@@ -663,6 +740,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             '距離上限',
             _distanceLabel(profile.distanceLimitMeters),
           ),
+          _buildPreferenceRow(
+            '身高體重',
+            '${_decimalLabel(profile.heightCm)} 公分 / ${_decimalLabel(profile.weightKg)} 公斤',
+          ),
+          _buildPreferenceRow('健康目標', profile.healthGoal.label),
         ],
       ),
     );
@@ -716,9 +798,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final nameController = TextEditingController(text: profile.name);
     final emailController = TextEditingController(text: profile.email);
     final phoneController = TextEditingController(text: profile.phone);
+    final heightController = TextEditingController(
+      text: _decimalLabel(profile.heightCm),
+    );
+    final weightController = TextEditingController(
+      text: _decimalLabel(profile.weightKg),
+    );
     var selectedTags = {...profile.dietaryTags};
     int? budgetMax = profile.budgetMax;
     int? distanceLimit = profile.distanceLimitMeters;
+    var healthGoal = profile.healthGoal;
     final availableTags =
         MockFoodRepository.allFoods.expand((food) => food.tags).toSet().toList()
           ..sort();
@@ -769,6 +858,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     TextField(
                       controller: phoneController,
                       decoration: const InputDecoration(labelText: '電話'),
+                    ),
+                    TextField(
+                      controller: heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: '身高（公分）'),
+                    ),
+                    TextField(
+                      controller: weightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: '體重（公斤）'),
+                    ),
+                    DropdownButtonFormField<HealthGoal>(
+                      initialValue: healthGoal,
+                      decoration: const InputDecoration(labelText: '健康目標'),
+                      items: HealthGoal.values
+                          .map(
+                            (goal) => DropdownMenuItem<HealthGoal>(
+                              value: goal,
+                              child: Text(goal.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        setSheetState(() {
+                          healthGoal = value;
+                        });
+                      },
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -835,6 +955,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             dietaryTags: selectedTags.toList(),
                             budgetMax: budgetMax,
                             distanceLimitMeters: distanceLimit,
+                            heightCm: _parsePositiveDouble(
+                              heightController.text,
+                              profile.heightCm,
+                            ),
+                            weightKg: _parsePositiveDouble(
+                              weightController.text,
+                              profile.weightKg,
+                            ),
+                            healthGoal: healthGoal,
                             clearBudgetMax: budgetMax == null,
                             clearDistanceLimit: distanceLimit == null,
                           ),
@@ -872,9 +1001,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return distanceLimitMeters == null ? '不限' : '$distanceLimitMeters 公尺';
   }
 
-  _HealthSummary _buildTodayHealthSummary() {
-    const dailyCalorieTarget = 1800;
+  _HealthSummary _buildTodayHealthSummary(UserProfile profile) {
     final today = DateTime.now();
+    final target = profile.dailyNutritionTarget;
     var mealCount = 0;
     var calories = 0;
     var totalWeightGrams = 0;
@@ -904,7 +1033,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       proteinGrams: proteinGrams,
       fatGrams: fatGrams,
       carbsGrams: carbsGrams,
-      dailyCalorieTarget: dailyCalorieTarget,
+      dailyCalorieTarget: target.calories,
     );
   }
 
@@ -920,6 +1049,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       savedFoodCount: _activityService.savedFoodCount,
       savedAmount: _activityService.savedAmount,
     );
+  }
+
+  double _parsePositiveDouble(String text, double fallback) {
+    final value = double.tryParse(text.trim());
+    if (value == null || value <= 0) {
+      return fallback;
+    }
+
+    return value;
+  }
+
+  String _decimalLabel(double value) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+
+    return value.toStringAsFixed(1);
   }
 }
 
