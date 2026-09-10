@@ -1,0 +1,28 @@
+<service>
+  <id>SchoolFoodAppApi</id>
+  <name>School Food App API</name>
+  <description>Food App member API on localhost. MySQL is managed separately.</description>
+  <executable>NODE_PATH</executable>
+  <arguments>"SERVER_PATH"</arguments>
+  <workingdirectory>BACKEND_PATH</workingdirectory>
+  <env name="HOST" value="127.0.0.1" />
+  <env name="PORT" value="3000" />
+  <env name="API_ALLOWED_IPS" value="127.0.0.1,::1" />
+  <env name="NODE_ENV" value="production" />
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+  <depend>MySQLFoodApp</depend>
+  <serviceaccount>
+    <domain>NT AUTHORITY</domain>
+    <user>LocalService</user>
+  </serviceaccount>
+  <onfailure action="restart" delay="30 sec" />
+  <resetfailure>1 hour</resetfailure>
+  <stoptimeout>30 sec</stoptimeout>
+  <stopparentprocessfirst>true</stopparentprocessfirst>
+  <logpath>LOG_PATH</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>
