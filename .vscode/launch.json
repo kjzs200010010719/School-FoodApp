@@ -2,6 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Flutter Member API (Debug)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "debug",
+            "toolArgs": ["--dart-define=API_BASE_URL=${input:memberApiUrl}"]
+        },
+        {
             "name": "Flutter Android Emulator (Debug)",
             "request": "launch",
             "type": "dart",
@@ -18,6 +26,14 @@
             "preLaunchTask": "Update project before Flutter launch",
             "deviceId": "emulator-5554",
             "flutterMode": "release"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "memberApiUrl",
+            "type": "promptString",
+            "description": "Member API base URL (include /api)",
+            "default": "http://10.0.2.2:3000/api"
         }
     ]
 }

@@ -19,6 +19,28 @@ void main() {
     );
   });
 
+  test(
+    'switching members isolates favorites, history and purchase records',
+    () async {
+      final food = MockFoodRepository.allFoods.first;
+      await service.switchAccount('api:member-a');
+      service.toggleFavorite(food);
+      service.addHistory(food);
+      service.addToCart(food);
+      service.checkoutCart();
+      await service.switchAccount('api:member-b');
+      expect(service.favorites, isEmpty);
+      expect(service.history, isEmpty);
+      expect(service.purchaseRecords, isEmpty);
+      await service.switchAccount(null);
+      expect(service.favorites, isEmpty);
+      await service.switchAccount('api:member-a');
+      expect(service.favorites.single.id, food.id);
+      expect(service.purchaseRecords, hasLength(1));
+      await service.switchAccount(null);
+    },
+  );
+
   test('mock foods include nutrition estimates', () {
     expect(MockFoodRepository.allFoods, hasLength(100));
     expect(

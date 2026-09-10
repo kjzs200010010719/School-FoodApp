@@ -15,12 +15,27 @@ class UserActivityService extends ChangeNotifier {
   UserActivityService._();
 
   static final UserActivityService instance = UserActivityService._();
-  static const String _favoriteIdsKey = 'favorite_food_ids';
-  static const String _historyIdsKey = 'history_food_ids';
-  static const String _searchLogsKey = 'search_logs';
-  static const String _cartItemsKey = 'cart_items';
-  static const String _purchaseRecordsKey = 'purchase_records';
-  static const String _foodFeedbackKey = 'food_feedback';
+  String? _accountId;
+  String get _prefix => _accountId == null ? 'guest:' : 'member:$_accountId:';
+  String get _favoriteIdsKey => '${_prefix}favorite_food_ids';
+  String get _historyIdsKey => '${_prefix}history_food_ids';
+  String get _searchLogsKey => '${_prefix}search_logs';
+  String get _cartItemsKey => '${_prefix}cart_items';
+  String get _purchaseRecordsKey => '${_prefix}purchase_records';
+  String get _foodFeedbackKey => '${_prefix}food_feedback';
+
+  Future<void> switchAccount(String? accountId) async {
+    if (_accountId == accountId) return;
+    _accountId = accountId;
+    _favorites.clear();
+    _history.clear();
+    _searchLogs.clear();
+    _cartQuantities.clear();
+    _purchaseRecords.clear();
+    _foodFeedback.clear();
+    await initialize();
+    notifyListeners();
+  }
 
   SharedPreferences? _preferences;
   final Map<String, FoodItem> _favorites = {};

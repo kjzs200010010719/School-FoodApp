@@ -4,6 +4,8 @@ import 'package:my_app/models/user_profile.dart';
 import 'package:my_app/screens/merchant_login_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
+import 'package:my_app/services/member_api.dart';
+import 'package:my_app/widgets/member_login_form.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({
@@ -64,66 +66,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLoginView() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.account_circle_rounded,
-                color: Color(0xFF4E8D57),
-                size: 54,
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                '建立你的飲食偏好',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E3A2F),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '先使用測試登入建立本機會員資料，後續可替換為正式註冊與 MySQL/API。',
-                style: TextStyle(color: Colors.black54, height: 1.5),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _loginWithDemo,
-                  icon: const Icon(Icons.login_rounded),
-                  label: const Text('測試登入'),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _goToMerchantLogin,
-                  icon: const Icon(Icons.storefront_rounded),
-                  label: const Text('商家登入'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return MemberLoginForm(
+      service: _profileService,
+      onLoginComplete: widget.onLoginComplete,
+      onMerchantLogin: _goToMerchantLogin,
     );
   }
 
@@ -1112,7 +1058,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SizedBox(
           width: double.infinity,
           child: TextButton.icon(
-            onPressed: _profileService.logout,
+            onPressed: _profileService.isBusy
+                ? null
+                : () async {
+                    try {
+                      await _profileService.logout();
+                    } on MemberApiException catch (error) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(error.message)));
+                      }
+                    }
+                  },
             icon: const Icon(Icons.logout_rounded),
             label: const Text('登出'),
           ),
@@ -1135,6 +1093,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     int? budgetMax = profile.budgetMax;
     int? distanceLimit = profile.distanceLimitMeters;
     var healthGoal = profile.healthGoal;
+    var saving = false;
+    String? saveError;
     final availableTags =
         MockFoodRepository.allFoods.expand((food) => food.tags).toSet().toList()
           ..sort();
@@ -1180,6 +1140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     TextField(
                       controller: emailController,
+                      readOnly: true,
                       decoration: const InputDecoration(labelText: 'Email'),
                     ),
                     TextField(
@@ -1240,14 +1201,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     DropdownButtonFormField<int?>(
                       initialValue: budgetMax,
                       decoration: const InputDecoration(labelText: '預算上限'),
-                      items: <int?>[80, 120, 150, 200, 300, null]
-                          .map(
-                            (value) => DropdownMenuItem<int?>(
-                              value: value,
-                              child: Text(value == null ? '不限' : '$value 元'),
-                            ),
-                          )
-                          .toList(),
+                      items:
+                          <int?>{
+                                80,
+                                120,
+                                150,
+                                200,
+                                300,
+                                null,
+                                profile.budgetMax,
+                              }
+                              .map(
+                                (value) => DropdownMenuItem<int?>(
+                                  value: value,
+                                  child: Text(
+                                    value == null ? '不限' : '$value 元',
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (value) {
                         setSheetState(() {
                           budgetMax = value;
@@ -1257,14 +1229,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     DropdownButtonFormField<int?>(
                       initialValue: distanceLimit,
                       decoration: const InputDecoration(labelText: '距離上限'),
-                      items: <int?>[500, 800, 1000, 1500, null]
-                          .map(
-                            (value) => DropdownMenuItem<int?>(
-                              value: value,
-                              child: Text(value == null ? '不限' : '$value 公尺'),
-                            ),
-                          )
-                          .toList(),
+                      items:
+                          <int?>{
+                                500,
+                                800,
+                                1000,
+                                1500,
+                                null,
+                                profile.distanceLimitMeters,
+                              }
+                              .map(
+                                (value) => DropdownMenuItem<int?>(
+                                  value: value,
+                                  child: Text(
+                                    value == null ? '不限' : '$value 公尺',
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (value) {
                         setSheetState(() {
                           distanceLimit = value;
@@ -1272,32 +1254,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 18),
+                    if (saveError != null)
+                      Text(
+                        saveError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     FilledButton(
-                      onPressed: () {
-                        _profileService.updateProfile(
-                          profile.copyWith(
-                            name: nameController.text.trim(),
-                            email: emailController.text.trim(),
-                            phone: phoneController.text.trim(),
-                            dietaryTags: selectedTags.toList(),
-                            budgetMax: budgetMax,
-                            distanceLimitMeters: distanceLimit,
-                            heightCm: _parsePositiveDouble(
-                              heightController.text,
-                              profile.heightCm,
-                            ),
-                            weightKg: _parsePositiveDouble(
-                              weightController.text,
-                              profile.weightKg,
-                            ),
-                            healthGoal: healthGoal,
-                            clearBudgetMax: budgetMax == null,
-                            clearDistanceLimit: distanceLimit == null,
-                          ),
-                        );
-                        Navigator.pop(context);
-                      },
-                      child: const Text('儲存'),
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              setSheetState(() {
+                                saving = true;
+                                saveError = null;
+                              });
+                              try {
+                                await _profileService.updateProfile(
+                                  profile.copyWith(
+                                    name: nameController.text.trim(),
+                                    email: emailController.text.trim(),
+                                    phone: phoneController.text.trim(),
+                                    dietaryTags: selectedTags.toList(),
+                                    budgetMax: budgetMax,
+                                    distanceLimitMeters: distanceLimit,
+                                    heightCm: _parsePositiveDouble(
+                                      heightController.text,
+                                      '身高',
+                                    ),
+                                    weightKg: _parsePositiveDouble(
+                                      weightController.text,
+                                      '體重',
+                                    ),
+                                    healthGoal: healthGoal,
+                                    clearBudgetMax: budgetMax == null,
+                                    clearDistanceLimit: distanceLimit == null,
+                                  ),
+                                );
+                                if (context.mounted) Navigator.pop(context);
+                              } on MemberApiException catch (error) {
+                                if (context.mounted) {
+                                  setSheetState(
+                                    () => saveError = error.message,
+                                  );
+                                }
+                              } finally {
+                                if (context.mounted) {
+                                  setSheetState(() => saving = false);
+                                }
+                              }
+                            },
+                      child: Text(saving ? '儲存中' : '儲存'),
                     ),
                   ],
                 ),
@@ -1313,11 +1320,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() {});
     }
-  }
-
-  void _loginWithDemo() {
-    _profileService.loginWithDemo();
-    widget.onLoginComplete?.call();
   }
 
   void _goToMerchantLogin() {
@@ -1436,10 +1438,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return first.year == second.year && first.month == second.month;
   }
 
-  double _parsePositiveDouble(String text, double fallback) {
+  double _parsePositiveDouble(String text, String label) {
     final value = double.tryParse(text.trim());
-    if (value == null || value <= 0) {
-      return fallback;
+    if (value == null || !value.isFinite || value <= 0) {
+      throw MemberApiException('請輸入有效的$label');
     }
 
     return value;

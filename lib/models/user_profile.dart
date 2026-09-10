@@ -1,5 +1,6 @@
 class UserProfile {
   const UserProfile({
+    this.id,
     required this.name,
     required this.email,
     required this.phone,
@@ -11,6 +12,7 @@ class UserProfile {
     required this.healthGoal,
   });
 
+  final String? id;
   final String name;
   final String email;
   final String phone;
@@ -97,6 +99,7 @@ class UserProfile {
     bool clearDistanceLimit = false,
   }) {
     return UserProfile(
+      id: id,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
@@ -113,6 +116,7 @@ class UserProfile {
 
   Map<String, Object?> toJson() {
     return {
+      'id': id,
       'name': name,
       'email': email,
       'phone': phone,
@@ -127,6 +131,7 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, Object?> json) {
     return UserProfile(
+      id: json['id']?.toString(),
       name: json['name'] as String? ?? demo.name,
       email: json['email'] as String? ?? demo.email,
       phone: json['phone'] as String? ?? demo.phone,

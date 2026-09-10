@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:my_app/models/user_profile.dart';
+import 'package:my_app/services/member_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/main.dart';
@@ -9,6 +16,24 @@ import 'package:my_app/widgets/food_card.dart';
 
 void main() {
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
+    UserProfileService.instance.configureForTesting(
+      MemberApi(
+        baseUrl: 'https://test.example/api',
+        client: MockClient((request) async {
+          return http.Response(
+            jsonEncode({
+              'token': 'widget-token',
+              'user': {...UserProfile.demo.toJson(), 'id': '1'},
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      ),
+      const FlutterSecureStorage(),
+    );
     UserActivityService.instance.clearForTesting();
     MerchantAuthService.instance.clearForTesting();
     UserProfileService.instance.clearForTesting();
@@ -272,11 +297,11 @@ void main() {
     await tester.tap(find.text('查看推薦'));
     await tester.pumpAndSettle();
 
-    expect(find.text('登入'), findsOneWidget);
-    expect(find.text('測試登入'), findsOneWidget);
+    expect(find.text('會員登入'), findsOneWidget);
+    expect(find.text('測試登入'), findsNothing);
   });
 
-  testWidgets('logs in with demo account and returns home', (
+  testWidgets('logs in through member API and returns home', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const MyApp());
@@ -284,10 +309,19 @@ void main() {
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('登入'), findsOneWidget);
-    expect(find.text('測試登入'), findsOneWidget);
+    expect(find.text('會員登入'), findsOneWidget);
+    expect(find.text('測試登入'), findsNothing);
 
-    await tester.tap(find.text('測試登入'));
+    await tester.enterText(
+      find.byKey(const ValueKey('member-email')),
+      'test@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('member-password')),
+      'test-password-123',
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('member-submit')));
+    await tester.tap(find.byKey(const ValueKey('member-submit')));
     await tester.pumpAndSettle();
 
     expect(find.text('膳解人意'), findsOneWidget);
