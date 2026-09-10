@@ -98,6 +98,7 @@ CREATE TABLE foods (
   eco_priority_score DECIMAL(4,3) NOT NULL DEFAULT 0,
   recommendation_reason VARCHAR(255) NULL,
   status ENUM('draft', 'active', 'sold_out', 'paused') NOT NULL DEFAULT 'draft',
+  merchant_revision INT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -107,6 +108,25 @@ CREATE TABLE foods (
   CONSTRAINT foods_store_fk
     FOREIGN KEY (store_id) REFERENCES stores(id)
     ON DELETE CASCADE
+);
+
+CREATE TABLE merchant_sessions (
+  token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  merchant_id BIGINT UNSIGNED NOT NULL,
+  expires_at DATETIME NOT NULL,
+  PRIMARY KEY (token_hash),
+  KEY merchant_sessions_expiry (merchant_id, expires_at),
+  CONSTRAINT merchant_sessions_merchant_fk FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE
+);
+
+CREATE TABLE merchant_product_requests (
+  merchant_id BIGINT UNSIGNED NOT NULL,
+  request_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  food_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (merchant_id, request_id),
+  CONSTRAINT merchant_requests_merchant_fk FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE,
+  CONSTRAINT merchant_requests_food_fk FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE
 );
 
 CREATE TABLE food_tags (

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/models/merchant_account.dart';
 import 'package:my_app/screens/admin_product_screen.dart';
 import 'package:my_app/services/merchant_auth_service.dart';
+import 'package:my_app/screens/merchant_products_screen.dart';
 
 class MerchantLoginScreen extends StatefulWidget {
   const MerchantLoginScreen({super.key});
@@ -27,6 +28,9 @@ class _MerchantLoginScreenState extends State<MerchantLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (MerchantAuthService.instance.useCloud) {
+      return const CloudMerchantLoginScreen();
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
       appBar: AppBar(

@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'package:my_app/services/request_id.dart';
 
 class PendingCartLine {
   const PendingCartLine(this.foodId, this.quantity);
@@ -13,16 +13,7 @@ class PendingCheckout {
   final List<PendingCartLine> items;
 
   factory PendingCheckout.create(List<PendingCartLine> items) {
-    final random = Random.secure();
-    final bytes = List.generate(16, (_) => random.nextInt(256));
-    bytes[6] = (bytes[6] & 15) | 64;
-    bytes[8] = (bytes[8] & 63) | 128;
-    final hex = bytes
-        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-        .join();
-    final id =
-        '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
-    return PendingCheckout(id, List.unmodifiable(items));
+    return PendingCheckout(newRequestId(), List.unmodifiable(items));
   }
   factory PendingCheckout.fromJson(Map<String, dynamic> json) {
     final id = json['id'];

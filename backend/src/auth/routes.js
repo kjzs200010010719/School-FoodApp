@@ -94,6 +94,8 @@ function authRoutes(repository, activityRepository = repository.pool ? new Activ
   }));
   if (activityRepository) router.use(activityRoutes(activityRepository, requireMember));
   if (repository.pool) {
+    const MerchantRepository = require('../merchant/repository');
+    router.use('/merchant', require('../merchant/routes')(new MerchantRepository(repository.pool)));
     const CatalogRepository = require('../catalog/repository');
     router.use(require('../catalog/routes')(new CatalogRepository(repository.pool)));
   }

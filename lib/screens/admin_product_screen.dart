@@ -3,6 +3,7 @@ import 'package:my_app/data/mock_food_repository.dart';
 import 'package:my_app/models/merchant_account.dart';
 import 'package:my_app/models/product_listing_draft.dart';
 import 'package:my_app/services/merchant_auth_service.dart';
+import 'package:my_app/screens/merchant_products_screen.dart';
 
 class AdminProductScreen extends StatefulWidget {
   const AdminProductScreen({super.key, this.merchant});
@@ -75,6 +76,9 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (MerchantAuthService.instance.useCloud) {
+      return const MerchantProductsScreen();
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F4),
       appBar: AppBar(

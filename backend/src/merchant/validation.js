@@ -1,0 +1,59 @@
+const fail = (statusCode, message) => Object.assign(new Error(message), { statusCode });
+function text(value, label, max, optional = false) {
+  if (typeof value !== 'string' || value.trim().length > max || (!optional && !value.trim())) {
+    throw fail(400, `${label}格式不正確`);
+  }
+  return value.trim();
+}
+function id(value) {
+  if (typeof value !== 'string' || !/^[1-9][0-9]{0,19}$/.test(value) || BigInt(value) > 18446744073709551615n) {
+    throw fail(400, 'ID 格式不正確');
+  }
+  return value;
+}
+function integer(value, label, max = 1000000) {
+  if (!Number.isInteger(value) || value < 0 || value > max) throw fail(400, `${label}須為 0 至 ${max} 的整數`);
+  return value;
+}
+function credentials(body = {}) {
+  const email = text(body.email, 'Email', 160).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw fail(400, 'Email 格式不正確');
+  if (typeof body.password !== 'string' || body.password.length < 12 || body.password.length > 128) {
+    throw fail(400, '密碼長度須為 12 至 128 個字元');
+  }
+  return { email, password: body.password };
+}
+function product(body = {}) {
+  const array = (value, label, max) => {
+    if (!Array.isArray(value) || value.length > 30) throw fail(400, `${label}最多 30 項`);
+    return [...new Set(value.map((item) => text(item, label, max)))].sort();
+  };
+  const price = integer(body.price, '價格');
+  const originalPrice = body.originalPrice == null ? null : integer(body.originalPrice, '原價');
+  if (originalPrice != null && originalPrice < price) throw fail(400, '原價不可低於售價');
+  if (typeof body.isExpiringSoon !== 'boolean') throw fail(400, '即期狀態格式不正確');
+  let expiresAt = null;
+  if (body.expiresAt != null) {
+    if (typeof body.expiresAt !== 'string' ||
+        !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(body.expiresAt)) throw fail(400, '保存期限須含 UTC 時區');
+    const date = new Date(body.expiresAt);
+    if (!Number.isFinite(date.getTime()) || date.getUTCFullYear() < 1000 || date.toISOString() !== body.expiresAt) throw fail(400, '保存期限格式不正確');
+    expiresAt = date.toISOString();
+  }
+  if (body.isExpiringSoon && !expiresAt) throw fail(400, '即期餐點須填寫保存期限');
+  const imageUrl = text(body.imageUrl, '圖片網址', 600, true);
+  if (imageUrl) {
+    let url;
+    try { url = new URL(imageUrl); } catch { throw fail(400, '圖片須使用 HTTPS 網址'); }
+    if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) throw fail(400, '圖片須使用 HTTPS 網址');
+  }
+  return { storeId: id(body.storeId), name: text(body.name, '餐點名稱', 120),
+    category: text(body.category, '分類', 40), price, originalPrice,
+    stockCount: integer(body.stockCount, '庫存'), imageUrl,
+    calories: integer(body.calories, '熱量', 10000), weightGrams: integer(body.weightGrams, '重量', 10000),
+    proteinGrams: integer(body.proteinGrams, '蛋白質', 10000), fatGrams: integer(body.fatGrams, '脂肪', 10000),
+    carbsGrams: integer(body.carbsGrams, '碳水', 10000),
+    tags: array(body.tags, '標籤', 40), ingredients: array(body.ingredients, '食材', 60),
+    expiresAt, isExpiringSoon: body.isExpiringSoon };
+}
+module.exports = { fail, text, id, integer, credentials, product };
