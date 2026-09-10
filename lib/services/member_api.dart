@@ -23,6 +23,7 @@ class MemberApi {
     String path, {
     Map<String, Object?>? body,
     String? token,
+    String? idempotencyKey,
   }) async {
     final base = Uri.tryParse(baseUrl);
     if (base == null ||
@@ -33,6 +34,9 @@ class MemberApi {
     final request = http.Request(method, Uri.parse('$baseUrl$path'));
     request.headers['Content-Type'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    if (idempotencyKey != null) {
+      request.headers['Idempotency-Key'] = idempotencyKey;
+    }
     if (body != null) request.body = jsonEncode(body);
     try {
       final response = await (() async {

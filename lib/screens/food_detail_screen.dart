@@ -39,7 +39,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       _selectedFeedbackTags.addAll(feedback.tags);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _activityService.addHistory(food);
+      if (mounted) _activityService.addHistory(food);
     });
   }
 
@@ -534,25 +534,34 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () {
-              _activityService.toggleFavorite(food);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isFavorite
-                        ? '已將 ${food.name} 移出收藏'
-                        : '已將 ${food.name} 加入收藏',
-                  ),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
+            onPressed: _activityService.isFavoriteBusy(food.id)
+                ? null
+                : () async {
+                    final saved = await _activityService.toggleFavorite(food);
+                    if (!saved || !context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isFavorite
+                              ? '已將 ${food.name} 移出收藏'
+                              : '已將 ${food.name} 加入收藏',
+                        ),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
             icon: Icon(
               isFavorite
                   ? Icons.favorite_rounded
                   : Icons.favorite_border_rounded,
             ),
-            label: Text(isFavorite ? '取消收藏' : '加入收藏'),
+            label: Text(
+              _activityService.isFavoriteBusy(food.id)
+                  ? '同步中'
+                  : isFavorite
+                  ? '取消收藏'
+                  : '加入收藏',
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4E8D57),
               foregroundColor: Colors.white,

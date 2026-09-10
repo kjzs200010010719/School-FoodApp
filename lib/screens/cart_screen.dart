@@ -4,16 +4,18 @@ import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/widgets/food_photo.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({super.key, this.onCheckoutComplete});
+  const CartScreen({super.key, this.onCheckoutComplete, this.activity});
 
   final VoidCallback? onCheckoutComplete;
+  final UserActivityService? activity;
 
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final UserActivityService _activityService = UserActivityService.instance;
+  late final UserActivityService _activityService =
+      widget.activity ?? UserActivityService.instance;
 
   @override
   void initState() {
@@ -47,7 +49,14 @@ class _CartScreenState extends State<CartScreen> {
         iconTheme: const IconThemeData(color: Color(0xFF2E3A2F)),
       ),
       body: SafeArea(
-        child: cartItems.isEmpty
+        child: _activityService.checkoutNeedsReview
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('待確認訂單資料異常，已暫停下單。請聯絡管理者確認。'),
+                ),
+              )
+            : cartItems.isEmpty && !_activityService.hasPendingCheckout
             ? _buildEmptyState()
             : Column(
                 children: [
@@ -165,7 +174,9 @@ class _CartScreenState extends State<CartScreen> {
       children: [
         IconButton.filledTonal(
           visualDensity: VisualDensity.compact,
-          onPressed: () => _activityService.decreaseCartItem(item.food),
+          onPressed: _activityService.cartLocked
+              ? null
+              : () => _activityService.decreaseCartItem(item.food),
           icon: const Icon(Icons.remove_rounded),
         ),
         SizedBox(
@@ -181,7 +192,9 @@ class _CartScreenState extends State<CartScreen> {
         ),
         IconButton.filledTonal(
           visualDensity: VisualDensity.compact,
-          onPressed: item.quantity >= item.food.stockCount
+          onPressed:
+              _activityService.cartLocked ||
+                  item.quantity >= item.food.stockCount
               ? null
               : () => _activityService.increaseCartItem(item.food),
           icon: const Icon(Icons.add_rounded),
@@ -206,7 +219,7 @@ class _CartScreenState extends State<CartScreen> {
                 child: Text('商品數量', style: TextStyle(color: Colors.black54)),
               ),
               Text(
-                '${_activityService.cartTotalQuantity} 項',
+                '${_activityService.checkoutQuantity} 項',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF2E3A2F),
@@ -221,7 +234,9 @@ class _CartScreenState extends State<CartScreen> {
                 child: Text('總金額', style: TextStyle(color: Colors.black54)),
               ),
               Text(
-                'NT\$ ${_activityService.cartTotalPrice}',
+                _activityService.hasPendingCheckout
+                    ? '等待訂單確認'
+                    : 'NT\$ ${_activityService.cartTotalPrice}',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -236,7 +251,15 @@ class _CartScreenState extends State<CartScreen> {
             child: FilledButton.icon(
               onPressed: _activityService.canCheckout ? _checkout : null,
               icon: const Icon(Icons.check_circle_rounded),
-              label: Text(_activityService.canCheckout ? '結帳' : '暫不接受下單'),
+              label: Text(
+                _activityService.isSyncing
+                    ? '處理中'
+                    : _activityService.hasPendingCheckout
+                    ? '確認上次訂單'
+                    : _activityService.isCloud
+                    ? '送出模擬訂單'
+                    : '結帳',
+              ),
             ),
           ),
         ],
@@ -244,16 +267,16 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void _checkout() {
-    final record = _activityService.checkoutCart();
-    if (record == null) {
+  Future<void> _checkout() async {
+    final record = await _activityService.submitCart();
+    if (record == null || !mounted) {
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '購買成功，共 ${record.totalQuantity} 項，NT\$ ${record.totalPrice}',
+          '${record.isCloud ? '模擬訂單已建立，尚未付款' : '購買成功'}，共 ${record.totalQuantity} 項，NT\$ ${record.totalPrice}',
         ),
         duration: const Duration(seconds: 1),
       ),

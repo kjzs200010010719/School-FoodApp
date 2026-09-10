@@ -395,6 +395,7 @@ class _ExpiringStoreScreenState extends State<ExpiringStoreScreen> {
                   variant: FoodCardVariant.expiring,
                   showDistance: true,
                   isFavorite: _activityService.isFavorite(food.id),
+                  favoriteBusy: _activityService.isFavoriteBusy(food.id),
                   onTap: () => _goToFoodDetail(food),
                   onFavoritePressed: () =>
                       _activityService.toggleFavorite(food),

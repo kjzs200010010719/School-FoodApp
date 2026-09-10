@@ -511,11 +511,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       '減廢成就',
                       style: TextStyle(
                         fontSize: 18,
@@ -523,10 +523,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Color(0xFF2E3A2F),
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      '結帳後累積惜食點數與等級',
-                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                      _activityService.isCloud
+                          ? '已載入模擬訂單的惜食統計'
+                          : '結帳後累積惜食點數與等級',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
                     ),
                   ],
                 ),

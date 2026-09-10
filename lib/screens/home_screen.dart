@@ -444,6 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 (food) => FoodCard(
                   food: food,
                   isFavorite: _activityService.isFavorite(food.id),
+                  favoriteBusy: _activityService.isFavoriteBusy(food.id),
                   onTap: () => _goToFoodDetail(food),
                   onFavoritePressed: () => _toggleFavorite(food),
                 ),
@@ -462,6 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       food: food,
                       variant: FoodCardVariant.expiring,
                       isFavorite: _activityService.isFavorite(food.id),
+                      favoriteBusy: _activityService.isFavoriteBusy(food.id),
                       onTap: _goToExpiringDeals,
                       onFavoritePressed: () => _toggleFavorite(food),
                     ),

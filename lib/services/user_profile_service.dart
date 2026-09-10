@@ -4,15 +4,21 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_app/models/user_profile.dart';
 import 'package:my_app/services/member_api.dart';
 import 'package:my_app/services/user_activity_service.dart';
+import 'package:my_app/services/member_activity_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProfileService extends ChangeNotifier {
-  UserProfileService({MemberApi? api, FlutterSecureStorage? storage})
-    : _api = api ?? MemberApi(),
-      _storage = storage ?? const FlutterSecureStorage();
+  UserProfileService({
+    MemberApi? api,
+    FlutterSecureStorage? storage,
+    UserActivityService? activity,
+  }) : _api = api ?? MemberApi(),
+       _activity = activity ?? UserActivityService.instance,
+       _storage = storage ?? const FlutterSecureStorage();
 
   static final UserProfileService instance = UserProfileService();
   MemberApi _api;
+  final UserActivityService _activity;
   FlutterSecureStorage _storage;
   UserProfile? _profile;
   String? _token;
@@ -77,6 +83,7 @@ class UserProfileService extends ChangeNotifier {
       await _storage.write(key: _tokenKey, value: token);
       _token = token;
       await _acceptProfile(response['user'] as Map<String, dynamic>);
+      if (_profile == null) throw const MemberApiException('登入已失效，請重新登入', 401);
     });
   }
 
@@ -124,16 +131,30 @@ class UserProfileService extends ChangeNotifier {
       throw const MemberApiException('會員資料格式不正確');
     }
     if (profile.id == null) throw const MemberApiException('會員資料格式不正確');
-    await UserActivityService.instance.switchAccount(
-      '${_api.baseUrl}:${profile.id}',
-    );
+    final token = _token;
     _profile = profile;
+    await _activity.switchAccount(
+      '${_api.baseUrl}:${profile.id}',
+      cloudApi: token == null
+          ? null
+          : MemberActivityApi(
+              api: _api,
+              token: token,
+              onUnauthorized: () async {
+                if (_token == token) {
+                  await _clearSession();
+                  errorMessage = '登入已失效，請重新登入';
+                  notifyListeners();
+                }
+              },
+            ),
+    );
   }
 
   Future<void> _clearSession() async {
     _token = null;
     _profile = null;
-    await UserActivityService.instance.switchAccount(null);
+    await _activity.switchAccount(null);
     await _storage.delete(key: _tokenKey);
   }
 

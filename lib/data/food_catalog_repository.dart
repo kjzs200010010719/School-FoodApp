@@ -13,6 +13,7 @@ class FoodCatalogRepository {
   final bool useCloud;
   final CatalogApi _api;
   List<FoodItem> _foods = const [];
+  bool isLoaded = false;
   List<FoodItem> get allFoods =>
       useCloud ? _foods : MockFoodRepository.allFoods;
 
@@ -40,6 +41,7 @@ class FoodCatalogRepository {
     } while (cursor != null);
     // Publish a complete result only; a partial/failed fetch never becomes the catalogue.
     _foods = List.unmodifiable(loaded);
+    isLoaded = true;
   }
 
   List<ConvenienceStore> get convenienceStores {

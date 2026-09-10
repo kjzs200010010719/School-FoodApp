@@ -290,6 +290,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ? FoodCardVariant.expiring
               : FoodCardVariant.recommendation,
           isFavorite: _activityService.isFavorite(food.id),
+          favoriteBusy: _activityService.isFavoriteBusy(food.id),
           onTap: () => _goToFoodDetail(food),
           onFavoritePressed: () => _activityService.toggleFavorite(food),
         );

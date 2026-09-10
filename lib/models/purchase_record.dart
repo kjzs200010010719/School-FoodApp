@@ -5,11 +5,16 @@ class PurchaseRecord {
     required this.id,
     required this.purchasedAt,
     required this.items,
+    this.cloudEcoPoints,
+    this.cloudSavedAmount,
   });
 
   final String id;
   final DateTime purchasedAt;
   final List<CartItem> items;
+  final int? cloudEcoPoints;
+  final int? cloudSavedAmount;
+  bool get isCloud => cloudEcoPoints != null;
 
   int get totalQuantity {
     return items.fold(0, (sum, item) => sum + item.quantity);

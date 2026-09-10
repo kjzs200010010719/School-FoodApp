@@ -9,14 +9,45 @@ import 'package:my_app/models/food_feedback.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/purchase_record.dart';
 import 'package:my_app/models/search_log.dart';
+import 'package:my_app/models/pending_checkout.dart';
+import 'package:my_app/services/member_activity_api.dart';
+import 'package:my_app/services/member_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserActivityService extends ChangeNotifier {
-  UserActivityService._();
+  UserActivityService({FoodCatalogRepository? catalog})
+    : _catalog = catalog ?? FoodCatalogRepository.instance;
 
-  static final UserActivityService instance = UserActivityService._();
+  static final UserActivityService instance = UserActivityService();
+  final FoodCatalogRepository _catalog;
+  bool get isCloud => _catalog.useCloud;
+  MemberActivityApi? _cloudApi;
+  int _generation = 0;
+  bool _busy = false;
+  Future<void> _operationDone = Future.value();
+  bool get isSyncing => isCloud && _busy;
+  bool cloudLoaded = false;
+  bool get cartLocked =>
+      isCloud && (_busy || hasPendingCheckout || _pendingCorrupt);
+  PendingCheckout? _pendingCheckout;
+  bool _pendingCorrupt = false;
+  bool get checkoutNeedsReview => _pendingCorrupt;
+  bool get hasPendingCheckout => _pendingCheckout != null;
+  int get checkoutQuantity =>
+      _pendingCheckout?.items.fold<int>(
+        0,
+        (sum, item) => sum + item.quantity,
+      ) ??
+      cartTotalQuantity;
+  String? _ordersCursor;
+  bool get hasMoreOrders => _ordersCursor != null;
+  String? errorMessage;
+  int errorRevision = 0;
+  bool isFavoriteBusy(String id) => isCloud && _busy;
   String? _accountId;
-  String get _prefix => _accountId == null ? 'guest:' : 'member:$_accountId:';
+  String get _prefix =>
+      '${isCloud ? 'cloud:' : ''}${_accountId == null ? 'guest:' : 'member:$_accountId:'}';
+  String get _pendingKey => '${_prefix}pending_checkout';
   String get _favoriteIdsKey => '${_prefix}favorite_food_ids';
   String get _historyIdsKey => '${_prefix}history_food_ids';
   String get _searchLogsKey => '${_prefix}search_logs';
@@ -24,8 +55,19 @@ class UserActivityService extends ChangeNotifier {
   String get _purchaseRecordsKey => '${_prefix}purchase_records';
   String get _foodFeedbackKey => '${_prefix}food_feedback';
 
-  Future<void> switchAccount(String? accountId) async {
-    if (_accountId == accountId) return;
+  Future<void> switchAccount(
+    String? accountId, {
+    MemberActivityApi? cloudApi,
+  }) async {
+    if (_accountId == accountId && _cloudApi?.token == cloudApi?.token) return;
+    _generation++;
+    _busy = false;
+    _cloudApi = cloudApi;
+    _pendingCheckout = null;
+    _pendingCorrupt = false;
+    _ordersCursor = null;
+    cloudLoaded = false;
+    errorMessage = null;
     _accountId = accountId;
     _favorites.clear();
     _history.clear();
@@ -85,10 +127,11 @@ class UserActivityService extends ChangeNotifier {
       0,
       (sum, record) =>
           sum +
-          record.items.fold(
-            0,
-            (itemSum, item) => itemSum + _ecoPointsForCartItem(item),
-          ),
+          (record.cloudEcoPoints ??
+              record.items.fold(
+                0,
+                (itemSum, item) => itemSum + _ecoPointsForCartItem(item),
+              )),
     );
   }
 
@@ -108,14 +151,16 @@ class UserActivityService extends ChangeNotifier {
       0,
       (sum, record) =>
           sum +
-          record.items.fold(0, (itemSum, item) {
-            final originalPrice = item.food.originalPrice;
-            if (!item.food.isExpiringSoon || originalPrice == null) {
-              return itemSum;
-            }
+          (record.cloudSavedAmount ??
+              record.items.fold(0, (itemSum, item) {
+                final originalPrice = item.food.originalPrice;
+                if (!item.food.isExpiringSoon || originalPrice == null) {
+                  return itemSum;
+                }
 
-            return itemSum + (originalPrice - item.food.price) * item.quantity;
-          }),
+                return itemSum +
+                    (originalPrice - item.food.price) * item.quantity;
+              })),
     );
   }
 
@@ -136,6 +181,7 @@ class UserActivityService extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    final generation = _generation;
     try {
       _preferences = await SharedPreferences.getInstance();
     } on MissingPluginException {
@@ -143,15 +189,42 @@ class UserActivityService extends ChangeNotifier {
       return;
     }
 
-    _restoreFavorites();
-    _restoreHistory();
+    if (generation != _generation) return;
+    if (!isCloud) {
+      _restoreFavorites();
+      _restoreHistory();
+      _restorePurchaseRecords();
+    }
     _restoreSearchLogs();
     _restoreCartItems();
-    _restorePurchaseRecords();
     _restoreFoodFeedback();
+    if (isCloud) {
+      _restorePendingCheckout();
+      if (_cloudApi != null && _catalog.isLoaded) await refreshCloud();
+      if (generation == _generation && _pendingCorrupt) {
+        _reportError('待確認訂單資料異常，請勿重複下單，請聯絡管理者確認');
+      }
+    }
   }
 
-  void toggleFavorite(FoodItem food) {
+  Future<bool> toggleFavorite(FoodItem food) async {
+    if (isCloud) {
+      final enabled = !isFavorite(food.id);
+      return await _cloudOperation<bool>(
+            (api) async {
+              await api.favorite(food.id, enabled);
+              return true;
+            },
+            (_) {
+              if (enabled) {
+                _favorites[food.id] = food.copyWith(isFavorite: true);
+              } else {
+                _favorites.remove(food.id);
+              }
+            },
+          ) ??
+          false;
+    }
     if (isFavorite(food.id)) {
       _favorites.remove(food.id);
     } else {
@@ -160,18 +233,34 @@ class UserActivityService extends ChangeNotifier {
 
     _persistFavorites();
     notifyListeners();
+    return true;
   }
 
-  void addHistory(FoodItem food) {
+  Future<void> addHistory(FoodItem food) async {
+    if (isCloud) {
+      final generation = _generation;
+      while (_busy) {
+        await _operationDone;
+        if (generation != _generation) return;
+      }
+      await _cloudOperation<bool>((api) async {
+        await api.view(food.id);
+        return true;
+      }, (_) => _recordHistory(food));
+      return;
+    }
+    _recordHistory(food);
+    _persistHistory();
+    notifyListeners();
+  }
+
+  void _recordHistory(FoodItem food) {
     _history.removeWhere((item) => item.id == food.id);
     _history.insert(0, food);
 
     if (_history.length > 20) {
       _history.removeRange(20, _history.length);
     }
-
-    _persistHistory();
-    notifyListeners();
   }
 
   void addSearchLog({required String keyword, required String filterSummary}) {
@@ -223,6 +312,7 @@ class UserActivityService extends ChangeNotifier {
   }
 
   void setCartQuantity(FoodItem food, int quantity) {
+    if (cartLocked) return;
     final nextQuantity = quantity.clamp(0, food.stockCount).toInt();
 
     if (nextQuantity == 0) {
@@ -235,10 +325,11 @@ class UserActivityService extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get canCheckout => !FoodCatalogRepository.instance.useCloud;
+  bool get canCheckout =>
+      !isCloud || (_cloudApi != null && !_busy && !_pendingCorrupt);
 
   PurchaseRecord? checkoutCart() {
-    if (!canCheckout) return null;
+    if (isCloud) return null;
     final items = cartItems;
 
     if (items.isEmpty) {
@@ -261,6 +352,206 @@ class UserActivityService extends ChangeNotifier {
     _persistPurchaseRecords();
     notifyListeners();
     return record;
+  }
+
+  Future<T?> _cloudOperation<T>(
+    Future<T> Function(MemberActivityApi) operation,
+    void Function(T) apply,
+  ) async {
+    final api = _cloudApi;
+    if (api == null) {
+      _reportError('請先登入');
+      return null;
+    }
+    if (_busy) {
+      _reportError('請等待目前同步完成');
+      return null;
+    }
+    final generation = _generation;
+    final completed = Completer<void>();
+    _operationDone = completed.future;
+    _busy = true;
+    errorMessage = null;
+    notifyListeners();
+    try {
+      final result = await operation(api);
+      if (generation != _generation) return null;
+      apply(result);
+      return result;
+    } on MemberApiException catch (error) {
+      if (generation == _generation) {
+        _reportError(error.message);
+        if (error.statusCode == 401) {
+          try {
+            await api.onUnauthorized?.call();
+          } catch (_) {
+            if (generation == _generation) _reportError('登入已失效，請重新登入');
+          }
+        }
+      }
+      return null;
+    } catch (_) {
+      if (generation == _generation) _reportError('同步未完成，請檢查連線後重試');
+      return null;
+    } finally {
+      completed.complete();
+      if (generation == _generation) {
+        _busy = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void _reportError(String message) {
+    errorMessage = message;
+    errorRevision++;
+    notifyListeners();
+  }
+
+  Future<bool> refreshCloud() async {
+    if (!isCloud || _cloudApi == null || _busy) return false;
+    final snapshot = await _cloudOperation(
+      (api) async {
+        final favorites = await api.favorites();
+        final history = await api.history();
+        final orders = await api.orders();
+        return (favorites: favorites, history: history, orders: orders);
+      },
+      (data) {
+        _favorites
+          ..clear()
+          ..addEntries(
+            data.favorites
+                .map(_findFood)
+                .whereType<FoodItem>()
+                .map(
+                  (food) => MapEntry(food.id, food.copyWith(isFavorite: true)),
+                ),
+          );
+        _history
+          ..clear()
+          ..addAll(data.history.map(_findFood).whereType<FoodItem>());
+        _purchaseRecords
+          ..clear()
+          ..addAll(data.orders.records);
+        _ordersCursor = data.orders.nextCursor;
+        cloudLoaded = true;
+      },
+    );
+    return snapshot != null;
+  }
+
+  Future<void> loadMoreOrders() async {
+    final cursor = _ordersCursor;
+    if (cursor == null || _busy) return;
+    await _cloudOperation((api) => api.orders(before: cursor), (page) {
+      if (page.nextCursor == cursor) throw const MemberApiException('訂單分頁回應異常');
+      final ids = _purchaseRecords.map((record) => record.id).toSet();
+      _purchaseRecords.addAll(
+        page.records.where((record) => ids.add(record.id)),
+      );
+      _ordersCursor = page.nextCursor;
+    });
+  }
+
+  Future<void> clearHistory() async {
+    if (!isCloud) {
+      _history.clear();
+      _persistHistory();
+      notifyListeners();
+      return;
+    }
+    await _cloudOperation((api) async {
+      await api.clearHistory();
+      return true;
+    }, (_) => _history.clear());
+  }
+
+  void _restorePendingCheckout() {
+    try {
+      final encoded = _preferences?.getString(_pendingKey);
+      if (encoded == null) {
+        _pendingCheckout = null;
+        _pendingCorrupt = false;
+        return;
+      }
+      _pendingCheckout = PendingCheckout.fromJson(
+        jsonDecode(encoded) as Map<String, dynamic>,
+      );
+      _pendingCorrupt = false;
+    } catch (_) {
+      _pendingCorrupt = true;
+      _reportError('待確認訂單資料異常，請勿重複下單，請聯絡管理者確認');
+    }
+  }
+
+  Future<PurchaseRecord?> submitCart() async {
+    if (!isCloud) return checkoutCart();
+    if (!canCheckout) return null;
+    if (_pendingCheckout == null && cartItems.isEmpty) return null;
+    if (_pendingCheckout == null &&
+        (cartItems.length > 50 ||
+            cartItems.any((item) => item.quantity > 99))) {
+      _reportError('每張訂單最多 50 種餐點，每種最多 99 份');
+      return null;
+    }
+    final generation = _generation;
+    final pendingKey = _pendingKey;
+    final cartKey = _cartItemsKey;
+    return _cloudOperation(
+      (api) async {
+        final preferences = _preferences;
+        if (preferences == null) {
+          throw const MemberApiException('無法保存訂單識別碼，請重新啟動 App 後再試');
+        }
+        final pending =
+            _pendingCheckout ??
+            PendingCheckout.create(
+              cartItems
+                  .map((item) => PendingCartLine(item.food.id, item.quantity))
+                  .toList(),
+            );
+        _pendingCheckout = pending;
+        if (!await preferences.setString(
+          pendingKey,
+          jsonEncode(pending.toJson()),
+        )) {
+          throw const MemberApiException('無法保存訂單識別碼，尚未送出訂單');
+        }
+        if (generation != _generation) {
+          throw const MemberApiException('帳號已切換，未送出訂單');
+        }
+        final PurchaseRecord record;
+        try {
+          record = await api.checkout(
+            pending.id,
+            pending.items.map((item) => item.toJson()).toList(),
+          );
+        } on MemberApiException catch (error) {
+          // A definite validation/stock rejection can be edited. Ambiguous responses keep the key.
+          if ((error.statusCode == 400 || error.statusCode == 409) &&
+              !error.message.contains('識別碼')) {
+            if (await preferences.remove(pendingKey) &&
+                generation == _generation) {
+              _pendingCheckout = null;
+            }
+          }
+          rethrow;
+        }
+        // Clear the persisted cart first. A crash here can safely replay the still-pending request.
+        if (!await preferences.remove(cartKey) ||
+            !await preferences.remove(pendingKey)) {
+          throw const MemberApiException('訂單已建立，本機確認未完成，請用原訂單重試確認');
+        }
+        return record;
+      },
+      (record) {
+        _pendingCheckout = null;
+        _cartQuantities.clear();
+        _purchaseRecords.removeWhere((existing) => existing.id == record.id);
+        _purchaseRecords.insert(0, record);
+      },
+    );
   }
 
   void saveFoodFeedback({
@@ -366,7 +657,7 @@ class UserActivityService extends ChangeNotifier {
   }
 
   FoodItem? _findFood(String foodId) {
-    for (final food in FoodCatalogRepository.instance.allFoods) {
+    for (final food in _catalog.allFoods) {
       if (food.id == foodId) {
         return food;
       }
@@ -493,6 +784,13 @@ class UserActivityService extends ChangeNotifier {
 
   @visibleForTesting
   void clearForTesting() {
+    _generation++;
+    _busy = false;
+    cloudLoaded = false;
+    _pendingCheckout = null;
+    _pendingCorrupt = false;
+    _ordersCursor = null;
+    errorMessage = null;
     _favorites.clear();
     _history.clear();
     _searchLogs.clear();
@@ -505,6 +803,7 @@ class UserActivityService extends ChangeNotifier {
     unawaited(_preferences?.remove(_cartItemsKey));
     unawaited(_preferences?.remove(_purchaseRecordsKey));
     unawaited(_preferences?.remove(_foodFeedbackKey));
+    unawaited(_preferences?.remove(_pendingKey));
     notifyListeners();
   }
 }

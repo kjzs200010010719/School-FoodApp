@@ -90,7 +90,8 @@ class ActivityRepository {
       purchased_at AS purchasedAt FROM purchase_orders WHERE user_id = ? AND id = ?`, [userId, orderId]);
     if (!rows.length) throw fail(404, '找不到此訂單');
     const [items] = await connection.execute(`SELECT food_id AS foodId, quantity,
-      unit_price AS unitPrice, food_snapshot AS foodSnapshot FROM purchase_order_items
+      unit_price AS unitPrice, original_unit_price AS originalUnitPrice,
+      eco_points AS ecoPoints, food_snapshot AS foodSnapshot FROM purchase_order_items
       WHERE purchase_order_id = ? ORDER BY id`, [orderId]);
     return { ...rows[0], id: String(rows[0].id), paymentStatus: 'not_processed',
       items: items.map((item) => ({ ...item, foodId: String(item.foodId), foodSnapshot: asJson(item.foodSnapshot) })) };

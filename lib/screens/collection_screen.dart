@@ -30,6 +30,9 @@ class _CollectionScreenState extends State<CollectionScreen>
       vsync: this,
     );
     _activityService.addListener(_refresh);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _activityService.refreshCloud();
+    });
   }
 
   @override
@@ -56,6 +59,21 @@ class _CollectionScreenState extends State<CollectionScreen>
         backgroundColor: const Color(0xFFF7F9F4),
         elevation: 0,
         centerTitle: true,
+        actions: [
+          if (_activityService.isCloud)
+            IconButton(
+              tooltip: '同步收藏與紀錄',
+              onPressed: _activityService.isSyncing
+                  ? null
+                  : _activityService.refreshCloud,
+              icon: const Icon(Icons.refresh),
+            ),
+          IconButton(
+            tooltip: '清除瀏覽紀錄',
+            onPressed: _activityService.isSyncing ? null : _confirmClearHistory,
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
         title: const Text(
           '收藏與紀錄',
           style: TextStyle(
@@ -84,24 +102,39 @@ class _CollectionScreenState extends State<CollectionScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFoodList(
-            foods: _activityService.favorites,
-            emptyTitle: '尚未收藏餐點',
-            emptyMessage: '在餐點詳情頁按下收藏，之後就能在這裡快速找到。',
-            removable: true,
-          ),
-          _buildFoodList(
-            foods: _activityService.history,
-            emptyTitle: '尚無瀏覽紀錄',
-            emptyMessage: '點進餐點詳情後，系統會自動留下最近看過的餐點。',
-          ),
-          _buildSearchLogList(_activityService.searchLogs),
-          _buildPurchaseRecordList(_activityService.purchaseRecords),
-        ],
-      ),
+      body: _activityService.isCloud && !_activityService.cloudLoaded
+          ? Center(
+              child: _activityService.isSyncing
+                  ? const CircularProgressIndicator()
+                  : const Text('尚未取得紀錄，請點上方同步按鈕重試'),
+            )
+          : Column(
+              children: [
+                if (_activityService.isSyncing) const LinearProgressIndicator(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildFoodList(
+                        foods: _activityService.favorites,
+                        emptyTitle: '尚未收藏餐點',
+                        emptyMessage: '在餐點詳情頁按下收藏，之後就能在這裡快速找到。',
+                        removable: true,
+                      ),
+                      _buildFoodList(
+                        foods: _activityService.history,
+                        emptyTitle: '尚無瀏覽紀錄',
+                        emptyMessage: '點進餐點詳情後，系統會自動留下最近看過的餐點。',
+                      ),
+                      _buildSearchLogList(_activityService.searchLogs),
+                      _buildPurchaseRecordList(
+                        _activityService.purchaseRecords,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -124,6 +157,7 @@ class _CollectionScreenState extends State<CollectionScreen>
           food: food,
           showDistance: true,
           isFavorite: _activityService.isFavorite(food.id),
+          favoriteBusy: _activityService.isFavoriteBusy(food.id),
           variant: food.isExpiringSoon
               ? FoodCardVariant.expiring
               : FoodCardVariant.recommendation,
@@ -228,6 +262,13 @@ class _CollectionScreenState extends State<CollectionScreen>
         ),
         const SizedBox(height: 12),
         ...records.map(_buildPurchaseRecordTile),
+        if (_activityService.hasMoreOrders)
+          TextButton(
+            onPressed: _activityService.isSyncing
+                ? null
+                : _activityService.loadMoreOrders,
+            child: const Text('載入較早訂單'),
+          ),
       ],
     );
   }
@@ -263,7 +304,9 @@ class _CollectionScreenState extends State<CollectionScreen>
               color: Color(0xFF2E3A2F),
             ),
           ),
-          subtitle: Text(record.summaryLabel),
+          subtitle: Text(
+            '${record.summaryLabel}${record.isCloud ? '（模擬訂單，未付款）' : ''}',
+          ),
           children: record.items
               .map(
                 (item) => Padding(
@@ -338,6 +381,26 @@ class _CollectionScreenState extends State<CollectionScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _confirmClearHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清除所有瀏覽紀錄？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('清除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await _activityService.clearHistory();
   }
 
   void _goToSearch(SearchLog log) {

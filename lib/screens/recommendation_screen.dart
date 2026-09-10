@@ -82,6 +82,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                       food: food,
                       showDistance: true,
                       isFavorite: _activityService.isFavorite(food.id),
+                      favoriteBusy: _activityService.isFavoriteBusy(food.id),
                       onTap: () => _goToFoodDetail(food),
                       onFavoritePressed: () =>
                           _activityService.toggleFavorite(food),

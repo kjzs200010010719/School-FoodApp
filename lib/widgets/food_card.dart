@@ -14,6 +14,7 @@ class FoodCard extends StatelessWidget {
     this.onFavoritePressed,
     this.showDistance = false,
     this.isFavorite,
+    this.favoriteBusy = false,
   });
 
   final FoodItem food;
@@ -22,6 +23,7 @@ class FoodCard extends StatelessWidget {
   final VoidCallback? onFavoritePressed;
   final bool showDistance;
   final bool? isFavorite;
+  final bool favoriteBusy;
 
   bool get _isExpiring => variant == FoodCardVariant.expiring;
 
@@ -130,7 +132,7 @@ class FoodCard extends StatelessWidget {
 
     if (_isExpiring) {
       return IconButton(
-        onPressed: onFavoritePressed,
+        onPressed: favoriteBusy ? null : onFavoritePressed,
         icon: Icon(
           favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
           color: favorite ? Colors.redAccent : const Color(0xFFD68A00),
@@ -139,7 +141,7 @@ class FoodCard extends StatelessWidget {
     }
 
     return IconButton(
-      onPressed: onFavoritePressed,
+      onPressed: favoriteBusy ? null : onFavoritePressed,
       icon: Icon(
         favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         color: Colors.redAccent,

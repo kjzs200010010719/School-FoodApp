@@ -163,6 +163,7 @@ test('MySQL integration: member activity isolation, persistence, snapshots and c
   const stored = (await restarted(`/me/orders/${order.id}`, 'GET', undefined, a)).body;
   assert.equal(stored.items[0].foodSnapshot.name, 'Test meal');
   assert.equal(stored.items[0].unitPrice, 100);
+  assert.equal(stored.items[0].originalUnitPrice, 120);
   assert.equal((await restarted('/me/favorites', 'GET', undefined, a)).body.items.length, 1);
   assert.equal((await restarted('/me/history', 'GET', undefined, a)).body.items.length, 1);
   assert.equal((await call('/me/orders', 'POST', { items: [{ foodId: foods[0], quantity: 1 },

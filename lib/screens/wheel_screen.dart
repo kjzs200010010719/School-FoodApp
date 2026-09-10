@@ -486,6 +486,7 @@ class _WheelScreenState extends State<WheelScreen>
                     ? FoodCardVariant.expiring
                     : FoodCardVariant.recommendation,
                 isFavorite: _activityService.isFavorite(food.id),
+                favoriteBusy: _activityService.isFavoriteBusy(food.id),
                 onTap: () => _goToFoodDetail(food),
                 onFavoritePressed: () => _activityService.toggleFavorite(food),
               ),
@@ -534,6 +535,7 @@ class _WheelScreenState extends State<WheelScreen>
                       ? FoodCardVariant.expiring
                       : FoodCardVariant.recommendation,
                   isFavorite: _activityService.isFavorite(food.id),
+                  favoriteBusy: _activityService.isFavoriteBusy(food.id),
                   onTap: () => _goToFoodDetail(food),
                   onFavoritePressed: () =>
                       _activityService.toggleFavorite(food),
