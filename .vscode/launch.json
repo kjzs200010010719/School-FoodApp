@@ -6,6 +6,7 @@
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
+            "preLaunchTask": "Update project before Flutter launch",
             "deviceId": "emulator-5554",
             "flutterMode": "debug"
         },
@@ -14,6 +15,7 @@
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
+            "preLaunchTask": "Update project before Flutter launch",
             "deviceId": "emulator-5554",
             "flutterMode": "release"
         }
