@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/food_search_service.dart';
@@ -29,13 +29,13 @@ class _WheelScreenState extends State<WheelScreen>
 
   List<FoodItem> get _candidates {
     return _wheelService.getCandidates(
-      foods: MockFoodRepository.allFoods,
+      foods: FoodCatalogRepository.instance.allFoods,
       filters: _filters,
     );
   }
 
   List<String> get _categories {
-    return MockFoodRepository.allFoods
+    return FoodCatalogRepository.instance.allFoods
         .map((food) => food.category)
         .toSet()
         .toList()
@@ -43,7 +43,7 @@ class _WheelScreenState extends State<WheelScreen>
   }
 
   List<String> get _tags {
-    return MockFoodRepository.allFoods
+    return FoodCatalogRepository.instance.allFoods
         .expand((food) => food.tags)
         .toSet()
         .toList()

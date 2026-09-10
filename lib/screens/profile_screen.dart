@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/user_profile.dart';
 import 'package:my_app/screens/merchant_login_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
@@ -1096,7 +1096,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     var saving = false;
     String? saveError;
     final availableTags =
-        MockFoodRepository.allFoods.expand((food) => food.tags).toSet().toList()
+        FoodCatalogRepository.instance.allFoods
+            .expand((food) => food.tags)
+            .toSet()
+            .toList()
           ..sort();
 
     showModalBottomSheet<void>(

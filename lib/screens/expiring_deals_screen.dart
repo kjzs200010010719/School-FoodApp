@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/convenience_store.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
@@ -26,13 +26,15 @@ class _ExpiringDealsScreenState extends State<ExpiringDealsScreen> {
   }
 
   List<ConvenienceStore> get _stores {
-    return MockFoodRepository.convenienceStoresByBrand(
+    return FoodCatalogRepository.instance
+        .convenienceStoresByBrand(
           _selectedBrand,
           maxDistanceMeters: _effectiveDistanceLimitMeters,
         )
         .where(
-          (store) =>
-              MockFoodRepository.expiringFoodsByStore(store.id).isNotEmpty,
+          (store) => FoodCatalogRepository.instance
+              .expiringFoodsByStore(store.id)
+              .isNotEmpty,
         )
         .toList();
   }
@@ -82,10 +84,12 @@ class _ExpiringDealsScreenState extends State<ExpiringDealsScreen> {
   }
 
   Widget _buildSummary() {
-    final totalFoods = MockFoodRepository.expiringFoodsByBrand(
-      _selectedBrand,
-      maxDistanceMeters: _effectiveDistanceLimitMeters,
-    ).length;
+    final totalFoods = FoodCatalogRepository.instance
+        .expiringFoodsByBrand(
+          _selectedBrand,
+          maxDistanceMeters: _effectiveDistanceLimitMeters,
+        )
+        .length;
     final totalStores = _stores.length;
 
     return Container(
@@ -167,7 +171,7 @@ class _ExpiringDealsScreenState extends State<ExpiringDealsScreen> {
   }
 
   Widget _buildStoreTile(BuildContext context, ConvenienceStore store) {
-    final foods = MockFoodRepository.expiringFoodsByStore(store.id);
+    final foods = FoodCatalogRepository.instance.expiringFoodsByStore(store.id);
     final riceBallCount = _countCategory(foods, '飯糰');
     final otherCount = foods
         .where((food) => food.category != '飯糰')
@@ -316,7 +320,9 @@ class _ExpiringStoreScreenState extends State<ExpiringStoreScreen> {
   String _selectedCategory = '全部';
 
   List<FoodItem> get _foods {
-    final foods = MockFoodRepository.expiringFoodsByStore(widget.store.id);
+    final foods = FoodCatalogRepository.instance.expiringFoodsByStore(
+      widget.store.id,
+    );
     if (_selectedCategory == '全部') {
       return foods;
     }
@@ -325,9 +331,13 @@ class _ExpiringStoreScreenState extends State<ExpiringStoreScreen> {
   }
 
   List<String> get _categories {
-    final categories = MockFoodRepository.expiringFoodsByStore(
-      widget.store.id,
-    ).map((food) => food.category).toSet().toList()..sort();
+    final categories =
+        FoodCatalogRepository.instance
+            .expiringFoodsByStore(widget.store.id)
+            .map((food) => food.category)
+            .toSet()
+            .toList()
+          ..sort();
     return ['全部', ...categories];
   }
 
@@ -397,7 +407,9 @@ class _ExpiringStoreScreenState extends State<ExpiringStoreScreen> {
   }
 
   Widget _buildStoreHeader() {
-    final foods = MockFoodRepository.expiringFoodsByStore(widget.store.id);
+    final foods = FoodCatalogRepository.instance.expiringFoodsByStore(
+      widget.store.id,
+    );
     final stockTotal = foods.fold<int>(0, (sum, food) => sum + food.stockCount);
 
     return Container(

@@ -45,10 +45,10 @@ healthGoal 為 maintain、muscleGain 或 fatLoss；預算和距離可為 null（
 ## 原型端點
 
 GET /api/health 回應 API 運作狀態，不代表其他資料功能已完成。
-GET /api/foods、/api/foods/:foodId、/api/stores/:storeId、/api/recommendations 仍讀模擬資料。
+GET /api/foods、/api/foods/:foodId、/api/stores/:storeId 已讀 MySQL，GET /api/recommendations 暫回應 501；詳見 [商品目錄](CATALOG.md)。
 MySQL 收藏、瀏覽與模擬訂單端點已提供，詳見 [會員活動 API 與遷移](MEMBER_ACTIVITY.md)。
 其他尚未完成會員隔離的原型寫入、商家及回饋端點仍回應 501；僅舊原型測試顯式開啟。
-App 現階段仍使用本機商品資料，只有會員與偏好接上這次的正式 API。
+App 預設保留展示商品；Flutter Cloud Catalog (Debug) 可改讀 MySQL 目錄。會員及偏好已串 API；收藏、瀏覽與購物車仍在本機，雲端模式暫不接受下單。
 學校防火牆與 HTTPS 尚未完成，外部 App 連線未驗證，狀態追蹤見 [部署進度](../docs/deployment_status.md)。
 
 ## 實作參考

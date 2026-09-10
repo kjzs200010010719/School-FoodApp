@@ -32,6 +32,8 @@ class FoodItem {
     this.expiresAt,
     this.isExpiringSoon = false,
     this.isFavorite = false,
+    this.storeBrand,
+    this.hasDistance = true,
   });
 
   final String id;
@@ -64,6 +66,8 @@ class FoodItem {
   final IconData icon;
   final String? specialLabel;
   final bool isFavorite;
+  final String? storeBrand;
+  final bool hasDistance;
 
   String get priceLabel => 'NT\$ $price';
 
@@ -106,6 +110,7 @@ class FoodItem {
   }
 
   String get distanceLabel {
+    if (!hasDistance) return '距離未提供';
     if (distanceMeters >= 1000) {
       final kilometers = distanceMeters / 1000;
       return '距離 ${kilometers.toStringAsFixed(1)} 公里';
@@ -164,6 +169,8 @@ class FoodItem {
     IconData? icon,
     String? specialLabel,
     bool? isFavorite,
+    String? storeBrand,
+    bool? hasDistance,
   }) {
     return FoodItem(
       id: id ?? this.id,
@@ -196,6 +203,8 @@ class FoodItem {
       icon: icon ?? this.icon,
       specialLabel: specialLabel ?? this.specialLabel,
       isFavorite: isFavorite ?? this.isFavorite,
+      storeBrand: storeBrand ?? this.storeBrand,
+      hasDistance: hasDistance ?? this.hasDistance,
     );
   }
 }

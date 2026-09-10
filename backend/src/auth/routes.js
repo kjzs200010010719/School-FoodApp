@@ -93,6 +93,10 @@ function authRoutes(repository, activityRepository = repository.pool ? new Activ
     res.json(await repository.update(req.member.id, validateProfile(req.body)));
   }));
   if (activityRepository) router.use(activityRoutes(activityRepository, requireMember));
+  if (repository.pool) {
+    const CatalogRepository = require('../catalog/repository');
+    router.use(require('../catalog/routes')(new CatalogRepository(repository.pool)));
+  }
   return router;
 }
 module.exports = authRoutes;

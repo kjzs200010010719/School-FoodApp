@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/cart_item.dart';
 import 'package:my_app/models/food_feedback.dart';
 import 'package:my_app/models/food_item.dart';
@@ -235,7 +235,10 @@ class UserActivityService extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get canCheckout => !FoodCatalogRepository.instance.useCloud;
+
   PurchaseRecord? checkoutCart() {
+    if (!canCheckout) return null;
     final items = cartItems;
 
     if (items.isEmpty) {
@@ -363,7 +366,7 @@ class UserActivityService extends ChangeNotifier {
   }
 
   FoodItem? _findFood(String foodId) {
-    for (final food in MockFoodRepository.allFoods) {
+    for (final food in FoodCatalogRepository.instance.allFoods) {
       if (food.id == foodId) {
         return food;
       }

@@ -2,6 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Flutter Cloud Catalog (Debug)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "debug",
+            "toolArgs": ["--dart-define=API_BASE_URL=${input:memberApiUrl}", "--dart-define=CLOUD_CATALOG=true"]
+        },
+        {
             "name": "Flutter Member API (Debug)",
             "request": "launch",
             "type": "dart",

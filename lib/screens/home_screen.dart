@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
 import 'package:my_app/screens/cart_screen.dart';
@@ -76,9 +76,26 @@ class _HomeScreenState extends State<HomeScreen> {
   FoodSearchFilters _homeSearchFilters = const FoodSearchFilters();
   int _currentIndex = 0;
   int _collectionTabIndex = 0;
+  bool _catalogRefreshing = false;
+
+  Future<void> _reloadCatalog() async {
+    setState(() => _catalogRefreshing = true);
+    try {
+      await FoodCatalogRepository.instance.load();
+      await _activityService.initialize();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('商品更新失敗，目前保留上次載入的資料')));
+      }
+    } finally {
+      if (mounted) setState(() => _catalogRefreshing = false);
+    }
+  }
 
   List<FoodItem> get expiringFoods {
-    return MockFoodRepository.expiringFoodsByBrand(
+    return FoodCatalogRepository.instance.expiringFoodsByBrand(
       null,
       maxDistanceMeters: _effectiveExpiringDistanceLimitMeters,
     );
@@ -105,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<String> get _categories {
-    return MockFoodRepository.allFoods
+    return FoodCatalogRepository.instance.allFoods
         .map((food) => food.category)
         .toSet()
         .toList()
@@ -113,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<String> get _tags {
-    return MockFoodRepository.allFoods
+    return FoodCatalogRepository.instance.allFoods
         .expand((food) => food.tags)
         .toSet()
         .toList()
@@ -123,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<FoodItem> get _recommendedFoods {
     return _recommendationService
         .getRecommendations(
-          foods: MockFoodRepository.allFoods,
+          foods: FoodCatalogRepository.instance.allFoods,
           preference: _currentPreference,
         )
         .take(3)
@@ -417,6 +434,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 24),
               _buildSectionTitle('今日推薦', '根據你的偏好推薦'),
               const SizedBox(height: 12),
+              if (_recommendedFoods.isEmpty)
+                Text(
+                  FoodCatalogRepository.instance.allFoods.isEmpty
+                      ? '目前沒有上架餐點'
+                      : '目前沒有符合偏好與營業條件的餐點',
+                ),
               ..._recommendedFoods.map(
                 (food) => FoodCard(
                   food: food,
@@ -489,6 +512,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        if (FoodCatalogRepository.instance.useCloud)
+          IconButton(
+            tooltip: '更新商品',
+            onPressed: _catalogRefreshing ? null : _reloadCatalog,
+            icon: _catalogRefreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
         _buildCartButton(),
       ],
     );
@@ -983,23 +1018,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E3A2F),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E3A2F),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            ],
+          ),
         ),
         TextButton(
           onPressed: onMorePressed ?? _goToRecommendation,

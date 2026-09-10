@@ -234,9 +234,9 @@ class _CartScreenState extends State<CartScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _checkout,
+              onPressed: _activityService.canCheckout ? _checkout : null,
               icon: const Icon(Icons.check_circle_rounded),
-              label: const Text('結帳'),
+              label: Text(_activityService.canCheckout ? '結帳' : '暫不接受下單'),
             ),
           ),
         ],

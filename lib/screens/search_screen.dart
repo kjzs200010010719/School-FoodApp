@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/screens/food_detail_screen.dart';
 import 'package:my_app/services/food_search_service.dart';
@@ -29,7 +29,7 @@ class _SearchScreenState extends State<SearchScreen> {
   late List<FoodItem> _results;
 
   List<String> get _categories {
-    return MockFoodRepository.allFoods
+    return FoodCatalogRepository.instance.allFoods
         .map((food) => food.category)
         .toSet()
         .toList()
@@ -37,7 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   List<String> get _tags {
-    return MockFoodRepository.allFoods
+    return FoodCatalogRepository.instance.allFoods
         .expand((food) => food.tags)
         .toSet()
         .toList()
@@ -529,7 +529,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<FoodItem> _search() {
     return _searchService.search(
-      foods: MockFoodRepository.allFoods,
+      foods: FoodCatalogRepository.instance.allFoods,
       query: _searchController.text,
       filters: _filters,
       sortOption: _sortOption,

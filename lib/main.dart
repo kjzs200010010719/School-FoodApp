@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_app/screens/home_screen.dart';
 import 'package:my_app/services/user_activity_service.dart';
 import 'package:my_app/services/user_profile_service.dart';
+import 'package:my_app/widgets/catalog_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4E8D57)),
         scaffoldBackgroundColor: const Color(0xFFF7F9F4),
       ),
-      home: const HomeScreen(),
+      home: CatalogGate(
+        onLoaded: UserActivityService.instance.initialize,
+        child: const HomeScreen(),
+      ),
     );
   }
 }

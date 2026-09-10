@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/data/mock_food_repository.dart';
+import 'package:my_app/data/food_catalog_repository.dart';
 import 'package:my_app/models/food_feedback.dart';
 import 'package:my_app/models/food_item.dart';
 import 'package:my_app/models/user_preference.dart';
@@ -260,7 +260,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
   List<FoodItem> _buildRecommendations() {
     return _recommendationService.getRecommendations(
-      foods: MockFoodRepository.allFoods,
+      foods: FoodCatalogRepository.instance.allFoods,
       preference: _currentPreference,
       feedbackByFoodId: _feedbackByFoodId,
     );
