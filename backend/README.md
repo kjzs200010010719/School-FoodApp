@@ -46,8 +46,10 @@ healthGoal 為 maintain、muscleGain 或 fatLoss；預算和距離可為 null（
 
 GET /api/health 回應 API 運作狀態，不代表其他資料功能已完成。
 GET /api/foods、/api/foods/:foodId、/api/stores/:storeId、/api/recommendations 仍讀模擬資料。
-未完成會員隔離的收藏、紀錄、商家及回饋端點在服務環境回應 501；僅舊原型測試顯式開啟。
+MySQL 收藏、瀏覽與模擬訂單端點已提供，詳見 [會員活動 API 與遷移](MEMBER_ACTIVITY.md)。
+其他尚未完成會員隔離的原型寫入、商家及回饋端點仍回應 501；僅舊原型測試顯式開啟。
 App 現階段仍使用本機商品資料，只有會員與偏好接上這次的正式 API。
+學校防火牆與 HTTPS 尚未完成，外部 App 連線未驗證，狀態追蹤見 [部署進度](../docs/deployment_status.md)。
 
 ## 實作參考
 

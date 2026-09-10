@@ -2,6 +2,8 @@ const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const { randomBytes } = require('node:crypto');
 const { hashPassword, verifyPassword, tokenHash } = require('./passwords');
+const ActivityRepository = require('../activity/repository');
+const activityRoutes = require('../activity/routes');
 
 const run = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 function invalid(message) { return Object.assign(new Error(message), { statusCode: 400 }); }
@@ -41,7 +43,7 @@ function validateProfile(body) {
     healthGoal: body.healthGoal, budgetMax: body.budgetMax, distanceLimitMeters: body.distanceLimitMeters };
 }
 
-function authRoutes(repository) {
+function authRoutes(repository, activityRepository = repository.pool ? new ActivityRepository(repository.pool) : null) {
   const router = express.Router();
   const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30,
     standardHeaders: 'draft-7', legacyHeaders: false,
@@ -90,6 +92,7 @@ function authRoutes(repository) {
   router.put('/me', requireMember, run(async (req, res) => {
     res.json(await repository.update(req.member.id, validateProfile(req.body)));
   }));
+  if (activityRepository) router.use(activityRoutes(activityRepository, requireMember));
   return router;
 }
 module.exports = authRoutes;

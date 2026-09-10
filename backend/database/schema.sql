@@ -175,9 +175,12 @@ CREATE TABLE purchase_orders (
   total_price INT UNSIGNED NOT NULL,
   eco_points INT UNSIGNED NOT NULL DEFAULT 0,
   saved_amount INT UNSIGNED NOT NULL DEFAULT 0,
+  client_request_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  request_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
   purchased_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY purchase_orders_user_time_index (user_id, purchased_at),
+  UNIQUE KEY purchase_orders_request_unique (user_id, client_request_id),
   CONSTRAINT purchase_orders_user_fk
     FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE CASCADE
@@ -190,6 +193,7 @@ CREATE TABLE purchase_order_items (
   quantity INT UNSIGNED NOT NULL,
   unit_price INT UNSIGNED NOT NULL,
   original_unit_price INT UNSIGNED NULL,
+  food_snapshot JSON NULL,
   eco_points INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   CONSTRAINT purchase_order_items_order_fk

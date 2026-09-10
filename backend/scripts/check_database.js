@@ -7,10 +7,11 @@ async function main() {
     const [rows] = await pool.query('SELECT DATABASE() AS db, @@port AS port, CURRENT_USER() AS account');
     console.table(rows);
     await pool.query('SELECT token_hash FROM user_sessions LIMIT 0');
-    console.log('Database and member session table are ready.');
+    await require('../src/activity/check_schema')(pool);
+    console.log('Database, member sessions and member activity tables are ready.');
   } catch (error) {
     console.error('Database check failed:', error.code);
-    console.error('Check .env and apply database/migrations/001_user_sessions.sql as the database administrator.');
+    console.error('Check .env and apply missing database migrations (001_user_sessions.sql, 002_member_activity.sql) as the database administrator.');
     process.exitCode = 1;
   } finally { await pool.end(); }
 }

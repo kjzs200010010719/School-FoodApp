@@ -6,7 +6,7 @@ let server;
 let baseUrl;
 
 before(async () => {
-  const app = createApp({ enablePrototypeRoutes: true });
+  const app = createApp({ enablePrototypeRoutes: true, userRepository: { session: async () => null } });
   server = app.listen(0);
 
   await new Promise((resolve) => {

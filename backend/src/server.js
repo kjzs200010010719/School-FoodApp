@@ -9,6 +9,7 @@ const pool = createDatabasePool();
 
 async function start() {
   await pool.query('SELECT token_hash FROM user_sessions LIMIT 0');
+  await require('./activity/check_schema')(pool);
   const app = createApp({ userRepository: new UserRepository(pool) });
   const server = app.listen(port, process.env.HOST || '127.0.0.1', () => {
     console.log(`膳解人意 API running on port ${port}`);
@@ -25,7 +26,7 @@ async function start() {
 
 start().catch(async (error) => {
   console.error('Database startup check failed:', error.code,
-    'Check DB settings and apply database/migrations/001_user_sessions.sql.');
+    'Check DB settings and apply missing database migrations (001, 002).');
   await pool.end();
   process.exitCode = 1;
 });
