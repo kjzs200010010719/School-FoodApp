@@ -138,26 +138,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-router.post('/auth/register', (req, res) => {
-  res.status(201).json({
-    message: '目前為本機原型，先回傳測試會員資料',
-    user: demoUser,
-  });
-});
-
-router.post('/auth/login', (req, res) => {
-  res.json({
-    message: '登入成功',
-    user: demoUser,
-    token: 'local-demo-token',
-  });
-});
-
-router.post('/auth/logout', (req, res) => {
-  res.json({
-    message: '登出成功',
-  });
-});
 
 router.post('/merchant/auth/login', (req, res) => {
   res.json({
@@ -219,31 +199,6 @@ router.post('/merchant/product-drafts', (req, res) => {
   res.status(201).json(draft);
 });
 
-router.get('/me', (req, res) => {
-  res.json(demoUser);
-});
-
-router.put('/me', (req, res) => {
-  Object.assign(demoUser, {
-    name: req.body.name ?? demoUser.name,
-    phone: req.body.phone ?? demoUser.phone,
-  });
-
-  res.json(demoUser);
-});
-
-router.get('/me/preferences', (req, res) => {
-  res.json(demoUser.preferences);
-});
-
-router.put('/me/preferences', (req, res) => {
-  demoUser.preferences = {
-    ...demoUser.preferences,
-    ...req.body,
-  };
-
-  res.json(demoUser.preferences);
-});
 
 router.get('/foods', (req, res) => {
   const results = filterFoods(req.query).map(withStore);

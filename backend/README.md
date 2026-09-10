@@ -1,34 +1,55 @@
 # 膳解人意 Backend
 
-這個資料夾是本機後端 API 原型，先用 mock data 對齊 Flutter App 目前需要的資料格式。正式資料庫建議部署在學校雲端伺服器，本機只保留 API 與測試流程；之後可依照 `database/schema.sql` 把資料來源改成 MySQL。
+會員註冊、登入、登出及會員資料 API 使用 MySQL；商品與推薦清單目前仍是模擬資料。
+首次建置先匯入 database/schema.sql，再執行 database/migrations/001_user_sessions.sql。
+已建好 14 張資料表的環境只需執行 migration。
 
-## 執行方式
+部署、驗收與 App 連線步驟見 [Windows 部署說明](DEPLOY_WINDOWS.md)。
+
+## 啟動
+
+設定 .env（範本 .env.example），在 backend 目錄執行：
 
 ```powershell
-cd backend
-npm install
-npm start
+npm.cmd ci
+npm.cmd run db:check
+npm.cmd test
+npm.cmd run test:mysql
+npm.cmd start
 ```
 
-`npm start` 會持續啟動 API 伺服器，終端機需要保持開著。`npm test` 只會跑測試，測試完成後程式會結束，因此瀏覽器不會連到 `localhost:3000`。
+db:check 及 test:mysql 使用真實資料庫；一般測試不依賴資料庫。
+test:mysql 會建立並清除隨機測試會員。API 啟動前檢查資料庫及登入紀錄表。
+預設只監聽 127.0.0.1。npm start 需保持執行，npm test 結束後不會啟動服務。
 
-啟動後可測試：
+## 會員 API
 
-```text
-GET http://localhost:3000/api/health
-GET http://localhost:3000/api/foods
-GET http://localhost:3000/api/recommendations
-POST http://localhost:3000/api/recommendations/food-001/feedback
-```
+| Method | 路徑 | 用途 |
+| --- | --- | --- |
+| POST | /api/auth/register | name、email、password；成功後請登入 |
+| POST | /api/auth/login | email、password；回傳 token、expiresAt、user |
+| POST | /api/auth/logout | 撤銷目前登入憑證 |
+| GET | /api/me | 取得自己的會員資料 |
+| PUT | /api/me | 儲存自己的資料與偏好 |
 
-## 環境變數
+除註冊登入外，會員端點需 Authorization: Bearer <token>。
+Email 會轉為小寫；註冊密碼至少 12、最多 128 字元。
+PUT /api/me 接受完整的 name、phone、heightCm、weightKg、healthGoal、dietaryTags、budgetMax、distanceLimitMeters。
+healthGoal 為 maintain、muscleGain 或 fatLoss；預算和距離可為 null（不限）。
+不接受透過 body 的 id 指定其他會員，Email 修改尚未開放。
 
-複製 `.env.example` 成 `.env`，再填入學校雲端 MySQL 或臨時測試資料庫設定。`.env` 不會提交到 Git。
+401 表示未登入或憑證失效；409 表示 Email 重複；400 為表單驗證失敗；429 為登入/註冊嘗試過多。
+憑證七天到期，登出後即失效。會員資料和偏好一起提交或一起回復。
+健康數值在註冊時暫用 170 公分、65 公斤，會員可在個人資料編輯；並非健康評估結果。
 
-## 目前狀態
+## 原型端點
 
-- 已建立 API 路由骨架。
-- 已提供餐點、推薦、收藏、瀏覽紀錄、搜尋紀錄、推薦回饋等 mock 回應。
-- 已新增 `database/schema.sql`，可作為學校雲端 MySQL 建表依據。
-- 尚未正式連接 MySQL。
-- 尚未加入正式會員密碼加密與 JWT 驗證。
+GET /api/health 回應 API 運作狀態，不代表其他資料功能已完成。
+GET /api/foods、/api/foods/:foodId、/api/stores/:storeId、/api/recommendations 仍讀模擬資料。
+未完成會員隔離的收藏、紀錄、商家及回饋端點在服務環境回應 501；僅舊原型測試顯式開啟。
+App 現階段仍使用本機商品資料，只有會員與偏好接上這次的正式 API。
+
+## 實作參考
+
+- [Node.js crypto](https://nodejs.org/api/crypto.html)：scrypt 密碼雜湊及隨機憑證。
+- [Flutter Secure Storage](https://pub.dev/packages/flutter_secure_storage)：裝置端安全儲存。

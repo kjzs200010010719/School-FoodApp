@@ -9,6 +9,9 @@ function createDatabasePool() {
     database: process.env.DB_NAME || 'shan_jie_ren_yi',
     waitForConnections: true,
     connectionLimit: 10,
+    timezone: 'Z',
+    supportBigNumbers: true,
+    bigNumberStrings: true,
   });
 }
 

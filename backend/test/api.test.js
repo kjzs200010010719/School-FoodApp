@@ -6,7 +6,7 @@ let server;
 let baseUrl;
 
 before(async () => {
-  const app = createApp();
+  const app = createApp({ enablePrototypeRoutes: true });
   server = app.listen(0);
 
   await new Promise((resolve) => {

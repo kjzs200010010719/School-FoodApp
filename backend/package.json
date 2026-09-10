@@ -6,12 +6,18 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "db:check": "node scripts/check_database.js",
+    "test:mysql": "node scripts/test_mysql.js"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
     "mysql2": "^3.11.5"
   }
 }
